@@ -1,5 +1,9 @@
 /* A collection of useful functions. */
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
 // content summary
 void tell_user(char* message);
   /* tell_user sends message to the console for user to read. Default
