@@ -4,16 +4,7 @@
    Run by:	./system_update [-option]
 */
 
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
 #include "utility_functions.c"
-
-// helper functions
-void custom_date_formatted();
-  /* custom_date_formatted prints detailed date and time information
-      at time of execution.
-      */
 
 void complete_details() {
 
@@ -123,25 +114,3 @@ int main(int argc, char* argv[]) {
   } // end if
 
 } // end main
-
-
-
-void custom_date_formatted() {
-
-  char* date_line_one = malloc(100);
-
-  time_t t = time(NULL);
-  struct tm timeinfo = *localtime(&t);
-
-  int int_day = timeinfo.tm_mday;
-  char* char_day = int_to_char(int_day);
-  char* suffix = number_suffix(int_day);
-  strcpy(date_line_one, "date '+%-I:%M%P on %A, the ");
-  append(date_line_one, char_day);
-  append(date_line_one, suffix);
-  append(date_line_one, " day of %B, %Y'");
-
-  tell_system(date_line_one);
-  tell_system("date '+At precisely %-S seconds and %-N nanoseconds'");
-
-} // end custom_date_formatted
