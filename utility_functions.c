@@ -22,6 +22,10 @@ void append(char* s, const char* t);
   /* append appends t onto s. Assumes s has enough space allocated
       for combined string.
       */
+void custom_date_formatted();
+  /* custom_date_formatted prints detailed date and time information
+      at time of execution.
+      */
 char* number_suffix(int x);
   /* number_suffix returns standard numeral suffix (st, nd, rd, th)
       for x. Ex.: x = 1, returns "st". Note: Current version effective
