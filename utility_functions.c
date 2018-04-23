@@ -66,6 +66,26 @@ void append(char* s, const char* t) {
   s[len_s + len_t + 1] = '\0';
 } // end append
 
+void custom_date_formatted() {
+
+  char* date_line_one = malloc(100);
+
+  time_t t = time(NULL);
+  struct tm timeinfo = *localtime(&t);
+
+  int int_day = timeinfo.tm_mday;
+  char* char_day = int_to_char(int_day);
+  char* suffix = number_suffix(int_day);
+  strcpy(date_line_one, "date '+%-I:%M%P on %A, the ");
+  append(date_line_one, char_day);
+  append(date_line_one, suffix);
+  append(date_line_one, " day of %B, %Y'");
+
+  tell_system(date_line_one);
+  tell_system("date '+At precisely %-S seconds and %-N nanoseconds'");
+
+} // end custom_date_formatted
+
 char* number_suffix(int x) {
   
   char* suffix = malloc(3);
