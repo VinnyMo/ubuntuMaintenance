@@ -44,7 +44,7 @@ void tell_user(char* message) {
   strcpy(deep_message, message);
   prepend(deep_message, "echo \\\\n\\\\n");
   append(deep_message, "\\\\n");
-  system(deep_message);
+  tell_system(deep_message);
 } // end tell_user
 
 void tell_system(char* command) {
