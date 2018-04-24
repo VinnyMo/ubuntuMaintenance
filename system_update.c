@@ -5,6 +5,17 @@
 */
 
 #include "utility_functions.c"
+  /* utility_functions.c contains custom functions that have use in
+      this program, as well as others. Many standard libraries are
+      also #included in this file.
+      */
+
+// additional functions
+void main_menu();
+  /* main_menu displays a formatted menu as a default function of the
+      program. Dynamically takes user input and displays requested
+      information.
+      */
 
 void complete_details() {
 
@@ -114,3 +125,20 @@ int main(int argc, char* argv[]) {
   } // end if
 
 } // end main
+
+void main_menu() {
+
+  /* Outline:
+     Display option one then (y/n)
+     if n, display option two then (y/n)
+     if n, display option three then (y/n)
+     if n, exit
+      */
+
+  /* May want to display all options at once, with a while loop
+      as a catch, and give a [1-4] menu option. May even be able
+      to give additional options. i.e. "3 -d" for details about
+      option 3.
+      */
+
+} // end main_menu
