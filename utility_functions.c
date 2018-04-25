@@ -11,6 +11,11 @@ void tell_user(char* message);
       formatting - two newlines before message, one newline following.
       Note: Maximum message length is 99 characters.
       */
+void tell_user_no_formatting(char* message);
+  /* tell_user_no_formatting sends message to the console for user to
+      read. There is no formatting; no newlines.
+      Note: Maximum message length is 199 characters.
+      */
 void tell_system(char* command);
   /* tell_system sends command to system to be executed.
       */
@@ -46,6 +51,13 @@ void tell_user(char* message) {
   append(deep_message, "\\\\n");
   tell_system(deep_message);
 } // end tell_user
+
+void tell_user_no_formatting(char* message) {
+  char* deep_message = malloc(220);
+  strcpy(deep_message, message);
+  prepend(deep_message, "echo ");
+  tell_system(deep_message);
+} // end tell_user_no_formatting
 
 void tell_system(char* command) {
   system(command);
@@ -92,29 +104,29 @@ void custom_date_formatted() {
 } // end custom_date_formatted
 
 char* number_suffix(int x) {
-  
+
   char* suffix = malloc(3);
-  
+
   if (x % 10 == 1 && x != 11) { 
-    
+
     strcpy(suffix, "st");
-    
+
   } else if (x % 10 == 2 && x != 12) {
-    
+
     strcpy(suffix, "nd");
-    
+
   } else if (x % 10 == 3 && x != 13) {
-    
+
     strcpy(suffix, "rd");
-    
+
   } else {
-    
+
     strcpy(suffix, "th");
-    
+
   } // end if
-  
+
   return suffix;
-  
+
 } // end number_suffix
 
 int char_to_int(char* s) {
