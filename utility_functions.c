@@ -11,11 +11,24 @@ void tell_user(char* message);
       formatting - two newlines before message, one newline following.
       Note: Maximum message length is 99 characters.
       */
+void tell_user_custom_formatting(char* message, int leading_nl, int trailing_nl);
+  /* tell_user sends message to the console for user to read. Allows
+      custom formatting; leading_nl newlines before message,
+      trailing_nl newlines following.
+      Note: Maximum message length is 199 characters, dependent on
+       number of newlines.
+      */
 void tell_user_no_formatting(char* message);
   /* tell_user_no_formatting sends message to the console for user to
       read. There is no formatting; no newlines.
       Note: Maximum message length is 199 characters.
       */
+void clear_screen();
+  /* clear_screen clears the console.
+     */
+void cls();
+  /* cls is the same as clear_screen.
+     */
 void tell_system(char* command);
   /* tell_system sends command to system to be executed.
       */
@@ -52,12 +65,33 @@ void tell_user(char* message) {
   tell_system(deep_message);
 } // end tell_user
 
+void tell_user_custom_formatting(char* message, int leading_nl, int trailing_nl) {
+  char* deep_message = malloc(280);
+  strcpy(deep_message, message);
+  for (int i = 0; i < leading_nl; i++) {
+    prepend(deep_message, "\\\\n");
+  } // end for
+  prepend(deep_message, "echo ");
+  for (int i =0; i < trailing_nl; i++) {
+    append(deep_message, "\\\\n");
+  } // end for
+  tell_system(deep_message);
+} // end tell_user
+
 void tell_user_no_formatting(char* message) {
   char* deep_message = malloc(220);
   strcpy(deep_message, message);
   prepend(deep_message, "echo ");
   tell_system(deep_message);
 } // end tell_user_no_formatting
+
+void clear_screen() {
+  tell_system("clear");
+} // end clear_screen
+
+void cls() {
+  tell_system("clear");
+} // end cls
 
 void tell_system(char* command) {
   system(command);

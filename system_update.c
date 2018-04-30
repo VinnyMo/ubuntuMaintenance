@@ -57,7 +57,9 @@ void force_update() {
   // 4.)
   tell_user("==== SCHEDULE REBOOT ====");
   tell_system("sudo shutdown -r");
+  tell_user_custom_formatting("Current system time:", 1, 0);
   custom_date_formatted();
+  tell_user("Logout or expect session disconnect");
 
 } // end force_update
 
