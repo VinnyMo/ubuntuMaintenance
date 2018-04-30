@@ -107,7 +107,7 @@ char* number_suffix(int x) {
 
   char* suffix = malloc(3);
 
-  if (x % 10 == 1 && x != 11) { 
+  if (x % 10 == 1 && x != 11) {
 
     strcpy(suffix, "st");
 

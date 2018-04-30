@@ -16,6 +16,9 @@ void main_menu();
       program. Dynamically takes user input and displays requested
       information.
       */
+void execute(char* option);
+  /* execute executes update option based on user command.
+     */
 
 void complete_details() {
 
@@ -54,6 +57,7 @@ void force_update() {
   // 4.)
   tell_user("==== SCHEDULE REBOOT ====");
   tell_system("sudo shutdown -r");
+  custom_date_formatted();
 
 } // end force_update
 
@@ -110,17 +114,17 @@ void critical_update() {
 
 int main(int argc, char* argv[]) {
 
-  if (argc > 2) {
-
-    tell_user("Invalid command");
-
-  } // end if
-
   if (argc == 1) {
 
-    tell_user("CODE WORK AHEAD");
-    critical_update();
-    // main_menu(); **UNDER CONSTRUCTION**
+    main_menu();
+
+  } else if (argc == 2) {
+
+    execute(argv[1]);
+
+  } else {
+
+    tell_user("Invalid command");
 
   } // end if
 
@@ -141,4 +145,28 @@ void main_menu() {
       option 3.
       */
 
+  tell_user("Main Menu Under Construction");
+
 } // end main_menu
+
+void execute(char* option) {
+
+  if (option[1] == 'f') {
+
+    force_update();
+
+  } else if (option[1] == 'a') {
+
+    all_update();
+
+  } else if (option[1] == 'c') {
+
+    critical_update();
+
+  } else {
+
+    tell_user("Invalid command");
+
+  } // end if
+
+} // end execute
