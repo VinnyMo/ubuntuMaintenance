@@ -138,10 +138,20 @@ void main_menu() {
   tell_user_custom_formatting("4.\\) Information", 0, 1);
   tell_user_no_formatting("\\>");
 
-  char* menuChoice;
-  scanf("%s", menuChoice);
+  int menuChoice;
+  scanf("%s", &menuChoice);
 
-  tell_user(menuChoice);
+  if (menuChoice == 1) {
+    tell_user("1");
+  } else if (menuChoice == 2) {
+    tell_user("2");
+  } else if (menuChoice == 3) {
+    tell_user("3");
+  } else if (menuChoice == 4) {
+    tell_user("4");
+  } else {
+    tell_user("Invalid command");
+  }
 
 } // end main_menu
 
