@@ -138,7 +138,7 @@ void main_menu() {
   tell_user_custom_formatting("4.\\) Information", 0, 1);
   tell_user_no_formatting("\\>");
 
-  char* menuChoice;
+  char menuChoice;
   scanf("%s", &menuChoice);
 
   tell_user(menuChoice);
