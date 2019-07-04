@@ -139,7 +139,7 @@ void main_menu() {
   tell_user_no_formatting("\\>");
 
   int menuChoice;
-  scanf("%s", &menuChoice);
+  scanf("%d", &menuChoice);
 
   if (menuChoice == 1) {
     tell_user("1");
