@@ -143,10 +143,12 @@ void main_menu() {
       option 3.
       */
 
+  tell_system("CLEAR");
   tell_user_custom_formatting("==== SYSTEM UPDATE ====", 1, 1);
   tell_user_custom_formatting("1.\\) Force Update", 0, 0);
   tell_user_custom_formatting("2.\\) All Update", 0, 0);
-  tell_user_custom_formatting("3.\\) Critical Update", 0, 1);
+  tell_user_custom_formatting("3.\\) Critical Update", 0, 0);
+  tell_user_custom_formatting("4.\\) Information", 0, 1);
 
 } // end main_menu
 
