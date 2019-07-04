@@ -142,15 +142,25 @@ void main_menu() {
   scanf("%d", &menuChoice);
 
   if (menuChoice == 1) {
-    tell_user("1");
+
+    force_update();
+
   } else if (menuChoice == 2) {
-    tell_user("2");
+
+    all_update();
+
   } else if (menuChoice == 3) {
-    tell_user("3");
+
+    critical_update();
+
   } else if (menuChoice == 4) {
-    tell_user("4");
+
+    tell_user("Information page under construction");
+
   } else {
+
     tell_user("Invalid command");
+    
   }
 
 } // end main_menu
