@@ -31,8 +31,8 @@ void complete_details() {
 
 void force_update() {
 
-  /* 1.) Download package information from all configured sources.
-     2.) Install available upgrades of all packages currently installed
+  /* 1.a.) Download package information from all configured sources.
+     1.b.) Install available upgrades of all packages currently installed
           on the system. Remove currently installed packages if this is
           needed to upgrade the system as a whole.
      3.) Remove packages that were automatically installed to satisfy
@@ -43,18 +43,14 @@ void force_update() {
       */
 
   // 1.)
-  tell_user("==== UPDATE PACKAGE INFORMATION ====");
-  tell_system("sudo apt update");
+  tell_user("==== UPDATE PACKAGE INFORMATION AND INSTALL ALL AVAILABLE PACKAGE UPGRADES ====");
+  tell_system("sudo apt update && sudo apt full-upgrade");
 
   // 2.)
-  tell_user("==== INSTALL ALL AVAILABLE PACKAGE UPGRADES ====");
-  tell_system("sudo apt full-upgrade");
+  tell_user("==== REMOVE OBSOLETE PACKAGES ====");
+  tell_system("sudo apt autoremove -y");
 
   // 3.)
-  tell_user("==== REMOVE OBSOLETE PACKAGES ====");
-  tell_system("sudo apt autoremove");
-
-  // 4.)
   tell_user("==== SCHEDULE REBOOT ====");
   tell_system("sudo shutdown -r");
   tell_user_custom_formatting("Current system time:", 1, 0);
@@ -147,7 +143,10 @@ void main_menu() {
       option 3.
       */
 
-  tell_user("Main Menu Under Construction");
+  tell_user_custom_formatting("==== SYSTEM UPDATE ====", 1, 1);
+  tell_user_custom_formatting("1.) Force Update", 0, 1);
+  tell_user_custom_formatting("2.) All Update", 0, 1);
+  tell_user_custom_formatting("3.) Critical Update", 0, 2);
 
 } // end main_menu
 
