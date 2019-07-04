@@ -82,6 +82,7 @@ void tell_user_no_formatting(char* message) {
   char* deep_message = malloc(220);
   strcpy(deep_message, message);
   prepend(deep_message, "echo ");
+  append(deep_message, "-n")
   tell_system(deep_message);
 } // end tell_user_no_formatting
 
