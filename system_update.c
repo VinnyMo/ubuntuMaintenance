@@ -136,7 +136,7 @@ void main_menu() {
   tell_user_custom_formatting("2.\\) All Update", 0, 0);
   tell_user_custom_formatting("3.\\) Critical Update", 0, 0);
   tell_user_custom_formatting("4.\\) Information", 0, 1);
-  //tell_user_no_formatting("> ");
+  tell_user_no_formatting("\\> ");
 
   //int menuChoice;
   //scanf("%d", &menuChoice);
