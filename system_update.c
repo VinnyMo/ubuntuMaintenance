@@ -130,25 +130,16 @@ int main(int argc, char* argv[]) {
 
 void main_menu() {
 
-  /* Outline:
-     Display option one then (y/n)
-     if n, display option two then (y/n)
-     if n, display option three then (y/n)
-     if n, exit
-      */
-
-  /* May want to display all options at once, with a while loop
-      as a catch, and give a [1-4] menu option. May even be able
-      to give additional options. i.e. "3 -d" for details about
-      option 3.
-      */
-
   tell_system("clear");
   tell_user_custom_formatting("==== SYSTEM UPDATE ====", 1, 1);
   tell_user_custom_formatting("1.\\) Force Update", 0, 0);
   tell_user_custom_formatting("2.\\) All Update", 0, 0);
   tell_user_custom_formatting("3.\\) Critical Update", 0, 0);
   tell_user_custom_formatting("4.\\) Information", 0, 1);
+  tell_user_no_formatting("> ");
+
+  int menuChoice;
+  scanf("%d", &menuChoice);
 
 } // end main_menu
 
