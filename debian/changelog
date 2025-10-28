@@ -1,0 +1,39 @@
+ubuntu-maintenance (2.0.0-1) jammy; urgency=medium
+
+  * Initial PPA release (version 2.0.0)
+  * Complete rewrite with production-ready security hardening
+  * Fixed all memory leaks (6 allocations without free())
+  * Replaced unsafe strcpy() with bounds-checked alternatives
+  * Added comprehensive buffer overflow protection
+  * Implemented input validation on all user input
+  * Added comprehensive error handling throughout
+  * Created proper header file structure
+  * Replaced inefficient 200+ line function with sprintf()
+  * Fixed missing return value in main()
+  * Implemented complete system information page
+  * Added dry-run mode for safe preview of changes
+  * Comprehensive logging to /var/log/system_update.log
+  * Safe reboot with 5-minute delay instead of immediate
+  * Added cancellable shutdown with user notification
+  * Implemented long and short command-line options
+  * Added complete help system with usage examples
+  * Sudo privilege checking for security
+  * Better output formatting and user feedback
+  * Progress indicators for long-running operations
+  * Exit codes for scripting integration
+  * Command execution logging with exit codes
+  * Fallback logging when primary log unavailable
+  * Interactive menu with proper input validation
+  * Added apt autoclean to all update modes
+  * Comprehensive documentation and man pages
+
+ -- Vincent T. Mossman <vinny@example.com>  Mon, 28 Oct 2025 04:00:00 +0000
+
+ubuntu-maintenance (1.0.0-1) jammy; urgency=low
+
+  * Initial release from 2019 codebase
+  * Basic update functionality
+  * Interactive menu system
+  * Three update modes: force, all, critical
+
+ -- Vincent T. Mossman <vinny@example.com>  Thu, 04 Jul 2019 12:00:00 +0000

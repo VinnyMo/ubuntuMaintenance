@@ -1,0 +1,35 @@
+Source: ubuntu-maintenance
+Section: admin
+Priority: optional
+Maintainer: Vincent T. Mossman <vinny@example.com>
+Build-Depends: debhelper-compat (= 13),
+               gcc,
+               libc6-dev
+Standards-Version: 4.6.0
+Homepage: https://github.com/VinnyMo/ubuntuMaintenance
+Vcs-Browser: https://github.com/VinnyMo/ubuntuMaintenance
+Vcs-Git: https://github.com/VinnyMo/ubuntuMaintenance.git
+Rules-Requires-Root: no
+
+Package: ubuntu-maintenance
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         apt (>= 1.0)
+Recommends: cron | systemd
+Suggests: unattended-upgrades
+Description: automated Ubuntu/Debian server maintenance tool
+ A production-ready command-line utility for automated Ubuntu/Debian
+ server maintenance. Provides safe, logged, and auditable system updates
+ with multiple operation modes.
+ .
+ Features:
+  * Multiple update modes: force (with reboot), all (no reboot), critical only
+  * Dry-run mode for safe preview before applying changes
+  * Comprehensive logging to /var/log/system_update.log
+  * Safe reboots with 5-minute cancellation window
+  * Interactive menu and command-line interface
+  * Suitable for web servers, databases, and production environments
+ .
+ Security hardening includes: memory leak fixes, buffer overflow protection,
+ input validation, comprehensive error handling, and audit logging.

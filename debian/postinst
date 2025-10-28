@@ -1,0 +1,53 @@
+#!/bin/sh
+# postinst script for ubuntu-maintenance
+
+set -e
+
+case "$1" in
+    configure)
+        # Create log file with proper permissions
+        if [ ! -f /var/log/system_update.log ]; then
+            touch /var/log/system_update.log
+            chmod 640 /var/log/system_update.log
+            chown root:root /var/log/system_update.log
+        fi
+
+        # Add logrotate configuration if logrotate is installed
+        if [ -d /etc/logrotate.d ]; then
+            cat > /etc/logrotate.d/ubuntu-maintenance <<'EOF'
+/var/log/system_update.log {
+    weekly
+    rotate 12
+    compress
+    delaycompress
+    notifempty
+    missingok
+    create 0640 root root
+}
+EOF
+        fi
+
+        echo ""
+        echo "Ubuntu Maintenance Tool installed successfully!"
+        echo ""
+        echo "Usage: sudo system_update [options]"
+        echo ""
+        echo "Run 'man system_update' for detailed documentation"
+        echo "or 'system_update --help' for quick reference"
+        echo ""
+        echo "Logs are written to: /var/log/system_update.log"
+        echo ""
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0

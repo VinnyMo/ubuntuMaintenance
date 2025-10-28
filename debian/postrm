@@ -1,0 +1,30 @@
+#!/bin/sh
+# postrm script for ubuntu-maintenance
+
+set -e
+
+case "$1" in
+    purge)
+        # Remove log file on purge
+        rm -f /var/log/system_update.log
+        rm -f /var/log/system_update.log.*.gz
+
+        # Remove logrotate configuration
+        rm -f /etc/logrotate.d/ubuntu-maintenance
+
+        echo "Ubuntu Maintenance Tool has been removed."
+        echo "Log files have been deleted."
+    ;;
+
+    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+    ;;
+
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0

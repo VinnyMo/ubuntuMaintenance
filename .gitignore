@@ -1,0 +1,30 @@
+# Build artifacts
+*.o
+system_update
+system_update.1.gz
+
+# Debian packaging artifacts
+debian/ubuntu-maintenance/
+debian/.debhelper/
+debian/files
+debian/*.log
+debian/*.substvars
+debian/debhelper-build-stamp
+
+# Source packages
+../*.deb
+../*.dsc
+../*.tar.xz
+../*.tar.gz
+../*.build
+../*.changes
+../*.buildinfo
+
+# IDE
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log

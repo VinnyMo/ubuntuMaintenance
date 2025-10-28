@@ -27,12 +27,43 @@ A production-ready command-line utility for automated Ubuntu/Debian server maint
 
 ## Installation
 
-### Prerequisites
+### Option 1: Install from PPA (Recommended)
+
+The easiest way to install on Ubuntu:
+
+```bash
+# Add the PPA (replace YOUR_USERNAME with the actual PPA username)
+sudo add-apt-repository ppa:YOUR_USERNAME/ubuntu-maintenance
+sudo apt update
+
+# Install the package
+sudo apt install ubuntu-maintenance
+```
+
+**Benefits of PPA installation:**
+- Automatic updates via `apt upgrade`
+- Properly installed man pages and documentation
+- Automatic log file setup
+- Easy removal with `apt remove`
+
+### Option 2: Build from Source
+
+#### Prerequisites
 - Ubuntu 18.04 LTS or later (or Debian-based distribution)
 - GCC compiler
 - Root/sudo privileges for system updates
 
-### Compile from Source
+#### Using Make (Recommended)
+
+```bash
+cd /home/user/ubuntuMaintenance
+make
+sudo make install
+```
+
+This installs to `/usr/bin/system_update` with man pages.
+
+#### Manual Compilation
 
 ```bash
 cd /home/user/ubuntuMaintenance
@@ -40,12 +71,18 @@ gcc -Wall -Wextra -o system_update system_update.c utility_functions.c
 sudo chmod +x system_update
 ```
 
-### Optional: Install System-Wide
+#### Optional: Install System-Wide
 
 ```bash
 sudo cp system_update /usr/local/bin/
 sudo chown root:root /usr/local/bin/system_update
 ```
+
+### Option 3: Create Your Own PPA
+
+Want to distribute this yourself? See:
+- **Quick Start**: [QUICKSTART_PPA.md](QUICKSTART_PPA.md) - Get started in 30 minutes
+- **Detailed Guide**: [PPA_GUIDE.md](PPA_GUIDE.md) - Complete PPA distribution guide
 
 ## Usage
 

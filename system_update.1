@@ -1,0 +1,128 @@
+.TH SYSTEM_UPDATE 1 "October 2025" "version 2.0.0" "Ubuntu Server Maintenance Tool"
+.SH NAME
+system_update \- automated Ubuntu/Debian server maintenance and update utility
+.SH SYNOPSIS
+.B system_update
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+.B system_update
+is a production-ready command-line utility for automated Ubuntu/Debian server maintenance. It provides safe, logged, and auditable system updates with multiple operation modes suitable for web servers, database servers, and production environments.
+.PP
+The tool offers three main update strategies: force update (with automatic reboot), all updates (without reboot), and critical security updates only. All operations are logged to /var/log/system_update.log for audit trails.
+.SH OPTIONS
+.TP
+.BR \-f ", " \-\-force
+Perform a full system update with automatic reboot scheduled in 5 minutes. This mode runs apt update, apt full-upgrade, apt autoremove, apt autoclean, and schedules a system reboot. The reboot can be cancelled with 'sudo shutdown -c' within the 5-minute window.
+.TP
+.BR \-a ", " \-\-all
+Perform a full system update without automatic reboot. This is the recommended mode for most production servers. Runs apt update, apt full-upgrade, apt autoremove, and apt autoclean. You control when to reboot.
+.TP
+.BR \-c ", " \-\-critical
+Install only critical security updates. This conservative mode runs apt update and apt upgrade (not full-upgrade), installing only security patches. Best for minimal risk and downtime.
+.TP
+.BR \-i ", " \-\-info
+Display comprehensive system information including hostname, kernel version, available updates, security updates, disk usage, uptime, and last reboot time. Does not require sudo privileges.
+.TP
+.BR \-d ", " \-\-dry\-run
+Preview mode that shows what commands would be executed without making any changes to the system. Always use this first in production environments. Must be combined with another option (e.g., -d -a).
+.TP
+.BR \-h ", " \-\-help
+Display help message with usage information and examples.
+.SH INTERACTIVE MODE
+When run without arguments,
+.B system_update
+presents an interactive menu with the following options:
+.PP
+.nf
+1) Force Update (with reboot)
+2) All Update (no reboot)
+3) Critical Update (security only)
+4) System Information
+5) Help
+0) Exit
+.fi
+.SH EXIT STATUS
+.TP
+.B 0
+Success
+.TP
+.B 1
+Failure (insufficient privileges, invalid arguments, or system errors)
+.SH FILES
+.TP
+.I /var/log/system_update.log
+Primary log file for all operations (falls back to /tmp/system_update.log if primary is unavailable)
+.TP
+.I /usr/bin/system_update
+Installed binary location
+.SH EXAMPLES
+.TP
+.B sudo system_update
+Run in interactive mode with menu
+.TP
+.B sudo system_update \-\-dry\-run \-a
+Preview all updates without applying them (recommended first step)
+.TP
+.B sudo system_update \-a
+Apply all updates without rebooting (recommended for production)
+.TP
+.B sudo system_update \-c
+Apply only critical security updates
+.TP
+.B sudo system_update \-f
+Full update with automatic reboot in 5 minutes
+.TP
+.B system_update \-i
+View system information (no sudo required)
+.SH CRON AUTOMATION
+For automated weekly updates without reboot:
+.PP
+.nf
+sudo crontab -e
+# Add:
+0 3 * * 0 /usr/bin/system_update -a >> /var/log/automated_updates.log 2>&1
+.fi
+.PP
+For daily security updates only:
+.PP
+.nf
+0 2 * * * /usr/bin/system_update -c >> /var/log/security_updates.log 2>&1
+.fi
+.SH SECURITY
+Version 2.0 includes comprehensive security hardening:
+.IP \[bu] 2
+All memory leaks fixed
+.IP \[bu]
+Buffer overflow protection
+.IP \[bu]
+Input validation on all user input
+.IP \[bu]
+Comprehensive error handling
+.IP \[bu]
+Sudo privilege checking
+.IP \[bu]
+All operations logged for audit trails
+.IP \[bu]
+Safe reboot with 5-minute cancellation window
+.SH NOTES
+.IP \[bu] 2
+Most operations require sudo/root privileges
+.IP \[bu]
+Reboot delay is 5 minutes (not immediate) for safety
+.IP \[bu]
+Logs include timestamps and exit codes for all commands
+.IP \[bu]
+Dry-run mode is strongly recommended before production use
+.IP \[bu]
+Suitable for web servers hosting accounting and business applications
+.SH BUGS
+Report bugs to the package maintainer or project repository.
+.SH AUTHOR
+Vincent T. Mossman
+.PP
+Production hardening and security enhancements (2025)
+.SH SEE ALSO
+.BR apt (8),
+.BR apt-get (8),
+.BR shutdown (8),
+.BR cron (8)
