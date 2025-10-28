@@ -31,6 +31,7 @@ void all_update(void);
 void critical_update(void);
 void show_information(void);
 void show_help(void);
+void manage_schedule(void);
 int check_sudo(void);
 void safe_reboot(int delay_minutes);
 
@@ -316,8 +317,9 @@ void main_menu(void) {
     tell_user_custom_formatting("3) Critical Update (security only)", 0, 0);
     tell_user_custom_formatting("4) System Information", 0, 0);
     tell_user_custom_formatting("5) Help", 0, 0);
+    tell_user_custom_formatting("6) Manage Update Schedule", 0, 0);
     tell_user_custom_formatting("0) Exit", 0, 1);
-    tell_user_no_formatting("Enter choice (0-5): ");
+    tell_user_no_formatting("Enter choice (0-6): ");
 
     if (fgets(input, sizeof(input), stdin) == NULL) {
         tell_user("ERROR: Failed to read input");
@@ -328,11 +330,11 @@ void main_menu(void) {
     // Remove newline
     input[strcspn(input, "\n")] = '\0';
 
-    choice = validate_menu_input(input, 0, 5);
+    choice = validate_menu_input(input, 0, 6);
 
     if (choice == -1) {
         tell_user("");
-        tell_user("Invalid choice. Please enter a number between 0 and 5.");
+        tell_user("Invalid choice. Please enter a number between 0 and 6.");
         tell_user("");
         sleep(2);
         main_menu();  // Show menu again
@@ -362,6 +364,9 @@ void main_menu(void) {
             getchar();
             main_menu();
             break;
+        case 6:
+            manage_schedule();
+            break;
         case 0:
             tell_user("Exiting. No changes made.");
             log_message("Program exited by user");
@@ -370,6 +375,229 @@ void main_menu(void) {
             tell_user("Invalid choice.");
             sleep(1);
             main_menu();
+    }
+}
+
+void manage_schedule(void) {
+    char input[100];
+    int choice;
+
+    clear_screen();
+    tell_user_custom_formatting("=== MANAGE UPDATE SCHEDULE ===", 1, 1);
+
+    // Show current schedule first
+    show_current_schedule();
+
+    tell_user_custom_formatting("What would you like to do?", 1, 1);
+    tell_user_custom_formatting("1) Add a new schedule", 0, 0);
+    tell_user_custom_formatting("2) View current schedule", 0, 0);
+    tell_user_custom_formatting("3) Remove all schedules", 0, 0);
+    tell_user_custom_formatting("0) Return to main menu", 0, 1);
+    tell_user_no_formatting("Enter choice (0-3): ");
+
+    if (fgets(input, sizeof(input), stdin) == NULL) {
+        tell_user("ERROR: Failed to read input");
+        main_menu();
+        return;
+    }
+
+    input[strcspn(input, "\n")] = '\0';
+    choice = validate_menu_input(input, 0, 3);
+
+    if (choice == -1) {
+        tell_user("Invalid choice.");
+        sleep(2);
+        manage_schedule();
+        return;
+    }
+
+    switch (choice) {
+        case 1: {
+            // Add new schedule
+            clear_screen();
+            tell_user("=== ADD NEW SCHEDULE ===");
+            tell_user("");
+
+            // Choose frequency
+            tell_user("Select frequency:");
+            tell_user("1) Daily (every day at 2:00 AM)");
+            tell_user("2) Weekly (every Sunday at 3:00 AM)");
+            tell_user("3) Weekdays (Monday-Friday at 2:00 AM)");
+            tell_user("0) Cancel");
+            tell_user_no_formatting("\nEnter choice (0-3): ");
+
+            if (fgets(input, sizeof(input), stdin) == NULL) {
+                main_menu();
+                return;
+            }
+
+            input[strcspn(input, "\n")] = '\0';
+            int freq_choice = validate_menu_input(input, 0, 3);
+
+            if (freq_choice == 0) {
+                manage_schedule();
+                return;
+            }
+
+            if (freq_choice == -1) {
+                tell_user("Invalid choice.");
+                sleep(2);
+                manage_schedule();
+                return;
+            }
+
+            const char *frequency;
+            switch (freq_choice) {
+                case 1: frequency = "daily"; break;
+                case 2: frequency = "weekly"; break;
+                case 3: frequency = "weekdays"; break;
+                default: frequency = "daily";
+            }
+
+            // Choose update mode
+            tell_user("");
+            tell_user("Select update mode:");
+            tell_user("1) All updates (recommended for servers)");
+            tell_user("2) Critical/security updates only");
+            tell_user("3) Force update with reboot (use with caution!)");
+            tell_user("0) Cancel");
+            tell_user_no_formatting("\nEnter choice (0-3): ");
+
+            if (fgets(input, sizeof(input), stdin) == NULL) {
+                main_menu();
+                return;
+            }
+
+            input[strcspn(input, "\n")] = '\0';
+            int mode_choice = validate_menu_input(input, 0, 3);
+
+            if (mode_choice == 0) {
+                manage_schedule();
+                return;
+            }
+
+            if (mode_choice == -1) {
+                tell_user("Invalid choice.");
+                sleep(2);
+                manage_schedule();
+                return;
+            }
+
+            const char *mode;
+            switch (mode_choice) {
+                case 1: mode = "all"; break;
+                case 2: mode = "critical"; break;
+                case 3: mode = "force"; break;
+                default: mode = "all";
+            }
+
+            // Confirm and add
+            tell_user("");
+            printf("You are about to schedule:\n");
+            printf("  Frequency: %s\n", frequency);
+            printf("  Mode: %s updates\n", mode);
+
+            if (strcmp(mode, "force") == 0) {
+                tell_user("");
+                tell_user("WARNING: Force mode will automatically reboot your server!");
+                tell_user("This should only be used if you have redundancy or scheduled maintenance windows.");
+            }
+
+            tell_user("");
+            tell_user_no_formatting("Proceed? (y/N): ");
+
+            if (fgets(input, sizeof(input), stdin) == NULL) {
+                main_menu();
+                return;
+            }
+
+            input[strcspn(input, "\n")] = '\0';
+
+            if (input[0] == 'y' || input[0] == 'Y') {
+                if (add_schedule(frequency, mode) == 0) {
+                    tell_user("");
+                    tell_user("Schedule added successfully!");
+                    tell_user("Automated updates will run in the background.");
+                    tell_user("Logs will be written to: /var/log/automated_updates.log");
+                    tell_user("");
+                    tell_user("Press Enter to continue...");
+                    getchar();
+                } else {
+                    tell_user("");
+                    tell_user("Failed to add schedule. Check logs for details.");
+                    tell_user("Press Enter to continue...");
+                    getchar();
+                }
+            } else {
+                tell_user("Cancelled.");
+                sleep(1);
+            }
+
+            manage_schedule();
+            break;
+        }
+
+        case 2:
+            // View current schedule
+            clear_screen();
+            show_current_schedule();
+            tell_user("Press Enter to continue...");
+            getchar();
+            manage_schedule();
+            break;
+
+        case 3: {
+            // Remove all schedules
+            int has_schedule = has_existing_schedule();
+
+            if (has_schedule == 0) {
+                tell_user("");
+                tell_user("No schedules to remove.");
+                sleep(2);
+                manage_schedule();
+                return;
+            } else if (has_schedule == -1) {
+                tell_user("ERROR: Failed to check schedules.");
+                sleep(2);
+                manage_schedule();
+                return;
+            }
+
+            tell_user("");
+            tell_user("WARNING: This will remove ALL system_update schedules.");
+            tell_user_no_formatting("Are you sure? (y/N): ");
+
+            if (fgets(input, sizeof(input), stdin) == NULL) {
+                main_menu();
+                return;
+            }
+
+            input[strcspn(input, "\n")] = '\0';
+
+            if (input[0] == 'y' || input[0] == 'Y') {
+                if (remove_all_schedules() == 0) {
+                    tell_user("Press Enter to continue...");
+                    getchar();
+                } else {
+                    tell_user("Failed to remove schedules. Check logs for details.");
+                    tell_user("Press Enter to continue...");
+                    getchar();
+                }
+            } else {
+                tell_user("Cancelled.");
+                sleep(1);
+            }
+
+            manage_schedule();
+            break;
+        }
+
+        case 0:
+            main_menu();
+            break;
+
+        default:
+            manage_schedule();
     }
 }
 

@@ -19,7 +19,7 @@ HEADERS = utility_functions.h
 OBJECTS = $(SOURCES:.c=.o)
 
 # Version info
-VERSION = 2.0.0
+VERSION = 2.1.0
 
 .PHONY: all clean install uninstall man
 

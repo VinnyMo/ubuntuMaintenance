@@ -1,4 +1,4 @@
-.TH SYSTEM_UPDATE 1 "October 2025" "version 2.0.0" "Ubuntu Server Maintenance Tool"
+.TH SYSTEM_UPDATE 1 "October 2025" "version 2.1.0" "Ubuntu Server Maintenance Tool"
 .SH NAME
 system_update \- automated Ubuntu/Debian server maintenance and update utility
 .SH SYNOPSIS
@@ -39,8 +39,12 @@ presents an interactive menu with the following options:
 3) Critical Update (security only)
 4) System Information
 5) Help
+6) Manage Update Schedule
 0) Exit
 .fi
+.PP
+.B Manage Update Schedule
+(option 6) provides an interactive interface to create, view, and remove automated update schedules using cron. Users can set up daily, weekly, or weekday schedules with their choice of update mode (all, critical, or force). This eliminates the need to manually edit crontab files.
 .SH EXIT STATUS
 .TP
 .B 0

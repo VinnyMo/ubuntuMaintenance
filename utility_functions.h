@@ -11,6 +11,7 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+#include <unistd.h>
 
 // Return codes for error handling
 #define SUCCESS 0
@@ -95,6 +96,28 @@ void log_message(const char* message);
 
 void log_command(const char* command, int exit_code);
   /* log_command logs a system command and its exit status.
+      */
+
+// Schedule management functions
+int has_existing_schedule(void);
+  /* has_existing_schedule checks if any system_update cron jobs exist.
+      Returns: 1 if schedules exist, 0 if none, -1 on error
+      */
+
+void show_current_schedule(void);
+  /* show_current_schedule displays all current system_update cron jobs.
+      */
+
+int add_schedule(const char* frequency, const char* mode);
+  /* add_schedule adds a new cron job for system_update.
+      frequency: "daily" or "weekly"
+      mode: "all", "critical", or "force"
+      Returns: 0 on success, -1 on error
+      */
+
+int remove_all_schedules(void);
+  /* remove_all_schedules removes all system_update cron jobs.
+      Returns: 0 on success, -1 on error
       */
 
 #endif // UTILITY_FUNCTIONS_H

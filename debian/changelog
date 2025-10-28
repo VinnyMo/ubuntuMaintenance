@@ -1,3 +1,19 @@
+ubuntu-maintenance (2.1.0-1) jammy; urgency=medium
+
+  * NEW FEATURE: Automated Update Schedule Management
+  * Added interactive schedule management menu (option 6)
+  * Users can now add/view/remove cron-based update schedules
+  * Support for daily, weekly, and weekday schedules
+  * Automatic cron job creation with proper logging
+  * Schedule modes: all updates, critical only, or force with reboot
+  * User-friendly schedule viewing with human-readable descriptions
+  * Comprehensive error handling for schedule operations
+  * Automated log file creation at /var/log/automated_updates.log
+  * Warning prompts for potentially dangerous configurations
+  * No more manual crontab editing required
+
+ -- Vincent T. Mossman <vinny@example.com>  Mon, 28 Oct 2025 06:00:00 +0000
+
 ubuntu-maintenance (2.0.0-1) jammy; urgency=medium
 
   * Initial PPA release (version 2.0.0)

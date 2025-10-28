@@ -3,18 +3,27 @@
 A production-ready command-line utility for automated Ubuntu/Debian server maintenance. Designed for safe, logged, and auditable system updates with multiple operation modes.
 
 **Author:** Vincent T. Mossman
-**Version:** 2.0 (Production Hardened)
-**License:** Open Source
+**Version:** 2.1 (Schedule Management)
+**License:** MIT
 
 ## Features
 
 ### Core Functionality
 - **Multiple Update Modes**: Force (with reboot), All (no reboot), Critical (security only)
+- **Automated Schedule Management** ⭐ NEW: Set up cron jobs without editing crontab
 - **Dry-Run Mode**: Preview changes before applying them
 - **System Information**: View comprehensive system and package status
 - **Automatic Logging**: All operations logged to `/var/log/system_update.log`
 - **Safe Reboots**: 5-minute delay with cancellation option
 - **Interactive & CLI Modes**: Use interactively or script with command-line options
+
+### Schedule Management (v2.1) ⭐ NEW
+- **Easy Cron Setup**: No need to manually edit crontab
+- **Multiple Frequencies**: Daily, weekly, or weekdays
+- **Flexible Modes**: Choose all updates, critical only, or force with reboot
+- **View Schedules**: See all configured update schedules in human-readable format
+- **Remove Schedules**: Safely remove automated updates with confirmation
+- **Automatic Logging**: Scheduled updates log to `/var/log/automated_updates.log`
 
 ### Security Improvements (v2.0)
 - ✅ All memory leaks fixed
