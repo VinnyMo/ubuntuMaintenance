@@ -14,7 +14,7 @@ set -e
 
 # Configuration
 PACKAGE="ubuntu-maintenance"
-VERSION="3.1.0"
+VERSION="3.1.1"
 MAINTAINER_NAME="Vincent T. Mossman"
 MAINTAINER_EMAIL="vinny.mossman@gmail.com"
 
@@ -144,8 +144,18 @@ build_source_package() {
     head -1 debian/changelog
 
     # Build source package
+    # Use -sd (source and diff) instead of -sa (source all) if orig.tar.xz exists
+    local build_opts="-S -d -k57657DC3657426DA28BC05B99D9EDCF0D2CDF97A"
+    if [ -f "../${PACKAGE}_${VERSION}.orig.tar.xz" ]; then
+        build_opts="$build_opts -sd"
+        print_success "Using existing orig.tar.xz (will not re-upload)"
+    else
+        build_opts="$build_opts -sa"
+        print_success "Will include orig.tar.xz in upload"
+    fi
+
     print_success "Running debuild..."
-    if debuild -S -sa -d -k57657DC3657426DA28BC05B99D9EDCF0D2CDF97A 2>&1 | tee /tmp/debuild.log | grep -E "dpkg-buildpackage|dpkg-source|error|warning"; then
+    if debuild $build_opts 2>&1 | tee /tmp/debuild.log | grep -E "dpkg-buildpackage|dpkg-source|error|warning"; then
         print_success "Source package built successfully"
     else
         print_error "Build failed! Check /tmp/debuild.log"
