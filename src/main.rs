@@ -8,6 +8,10 @@ mod utils;
 
 use clap::Parser;
 use colored::*;
+use crossterm::{
+    event::{self, Event, KeyCode, KeyEvent},
+    terminal::{disable_raw_mode, enable_raw_mode},
+};
 use logger::{log_message, get_log_path};
 use schedule::{add_schedule, has_existing_schedule, remove_all_schedules, show_current_schedule};
 use std::process::Command;
@@ -15,7 +19,7 @@ use std::thread;
 use std::time::Duration;
 use utils::*;
 
-const VERSION: &str = "3.0.0";
+const VERSION: &str = "3.1.0";
 const REBOOT_DELAY_MINUTES: i32 = 5;
 
 #[derive(Parser, Debug)]
@@ -101,73 +105,112 @@ fn main() {
 }
 
 fn main_menu() {
-    clear_screen();
-    tell_user_custom(&"=== UBUNTU SERVER MAINTENANCE TOOL ===".bold().to_string(), 1, 1);
-    tell_user_custom("1) Force Update (with reboot)", 0, 0);
-    tell_user_custom("2) All Update (no reboot)", 0, 0);
-    tell_user_custom("3) Critical Update (security only)", 0, 0);
-    tell_user_custom("4) System Information", 0, 0);
-    tell_user_custom("5) Help", 0, 0);
-    tell_user_custom("6) Manage Update Schedule", 0, 0);
-    tell_user_custom("0) Exit", 0, 1);
-    tell_user_no_format("Enter choice (0-6): ");
+    let menu_items = vec![
+        "Force Update (with reboot)",
+        "All Update (no reboot)",
+        "Critical Update (security only)",
+        "System Information",
+        "Help",
+        "Manage Update Schedule",
+        "Exit",
+    ];
 
-    if let Ok(input) = get_input() {
-        if let Some(choice) = validate_menu_input(&input, 0, 6) {
+    let mut selected = 0;
+
+    loop {
+        clear_screen();
+
+        // Header
+        println!("\n{}\n", "=== UBUNTU MAINTENANCE ===".blue().bold());
+
+        // Menu items
+        for (i, item) in menu_items.iter().enumerate() {
+            if i == selected {
+                println!("\t{} {}", "*".green().bold(), item.green());
+            } else {
+                println!("\t  {}", item);
+            }
+        }
+
+        println!("\n{}", "Use ↑/↓ arrow keys to navigate, Enter to select".dimmed());
+
+        // Enable raw mode to capture arrow keys
+        if enable_raw_mode().is_err() {
+            error_message("Failed to enable terminal raw mode");
+            return;
+        }
+
+        // Wait for key press
+        let choice = loop {
+            if let Ok(Event::Key(KeyEvent { code, .. })) = event::read() {
+                match code {
+                    KeyCode::Up => {
+                        if selected > 0 {
+                            selected -= 1;
+                        }
+                        break None;
+                    }
+                    KeyCode::Down => {
+                        if selected < menu_items.len() - 1 {
+                            selected += 1;
+                        }
+                        break None;
+                    }
+                    KeyCode::Enter => {
+                        break Some(selected);
+                    }
+                    KeyCode::Char('q') | KeyCode::Esc => {
+                        break Some(menu_items.len() - 1); // Exit option
+                    }
+                    _ => {}
+                }
+            }
+        };
+
+        let _ = disable_raw_mode();
+
+        // Process selection
+        if let Some(idx) = choice {
             let state = AppState { dry_run: false };
 
-            match choice {
-                1 => {
+            match idx {
+                0 => {
                     force_update(&state);
                 }
-                2 => {
+                1 => {
                     all_update(&state);
                 }
-                3 => {
+                2 => {
                     critical_update(&state);
                 }
-                4 => {
+                3 => {
                     show_information();
                     tell_user("");
                     tell_user("Press Enter to return to menu...");
                     let _ = get_input();
-                    main_menu();
                 }
-                5 => {
+                4 => {
                     show_help();
                     tell_user("Press Enter to return to menu...");
                     let _ = get_input();
-                    main_menu();
                 }
-                6 => {
+                5 => {
                     manage_schedule();
                 }
-                0 => {
+                6 => {
                     tell_user("Exiting. No changes made.");
                     log_message("Program exited by user");
+                    return;
                 }
-                _ => {
-                    tell_user("Invalid choice.");
-                    thread::sleep(Duration::from_secs(1));
-                    main_menu();
-                }
+                _ => {}
             }
-        } else {
-            tell_user("");
-            tell_user("Invalid choice. Please enter a number between 0 and 6.");
-            tell_user("");
-            thread::sleep(Duration::from_secs(2));
-            main_menu();
         }
-    } else {
-        error_message("ERROR: Failed to read input");
-        log_message("ERROR: Failed to read menu input");
     }
 }
 
 fn show_help() {
     clear_screen();
-    tell_user("=== UBUNTU SERVER MAINTENANCE TOOL ===");
+    println!("\n{}\n", "=== UBUNTU MAINTENANCE ===".blue().bold());
     tell_user("");
     tell_user("Usage: sudo ubuntu-maintenance [options]");
     tell_user("");
@@ -398,118 +441,222 @@ fn critical_update(state: &AppState) {
 }
 
 fn manage_schedule() {
-    clear_screen();
-    tell_user_custom(&"=== MANAGE UPDATE SCHEDULE ===".bold().to_string(), 1, 1);
+    let menu_items = vec![
+        "Add a new schedule",
+        "View current schedule",
+        "Remove all schedules",
+        "Return to main menu",
+    ];
 
-    // Show current schedule first
-    let _ = show_current_schedule();
+    let mut selected = 0;
 
-    tell_user_custom("What would you like to do?", 1, 1);
-    tell_user_custom("1) Add a new schedule", 0, 0);
-    tell_user_custom("2) View current schedule", 0, 0);
-    tell_user_custom("3) Remove all schedules", 0, 0);
-    tell_user_custom("0) Return to main menu", 0, 1);
-    tell_user_no_format("Enter choice (0-3): ");
+    loop {
+        clear_screen();
+        println!("\n{}\n", "=== MANAGE UPDATE SCHEDULE ===".blue().bold());
 
-    if let Ok(input) = get_input() {
-        if let Some(choice) = validate_menu_input(&input, 0, 3) {
-            match choice {
-                1 => add_schedule_menu(),
-                2 => {
+        // Show current schedule first
+        let _ = show_current_schedule();
+        println!();
+
+        // Menu items
+        for (i, item) in menu_items.iter().enumerate() {
+            if i == selected {
+                println!("\t{} {}", "*".green().bold(), item.green());
+            } else {
+                println!("\t  {}", item);
+            }
+        }
+
+        println!("\n{}", "Use ↑/↓ arrow keys to navigate, Enter to select".dimmed());
+
+        if enable_raw_mode().is_err() {
+            error_message("Failed to enable terminal raw mode");
+            return;
+        }
+
+        let choice = loop {
+            if let Ok(Event::Key(KeyEvent { code, .. })) = event::read() {
+                match code {
+                    KeyCode::Up => {
+                        if selected > 0 {
+                            selected -= 1;
+                        }
+                        break None;
+                    }
+                    KeyCode::Down => {
+                        if selected < menu_items.len() - 1 {
+                            selected += 1;
+                        }
+                        break None;
+                    }
+                    KeyCode::Enter => {
+                        break Some(selected);
+                    }
+                    KeyCode::Char('q') | KeyCode::Esc => {
+                        break Some(menu_items.len() - 1);
+                    }
+                    _ => {}
+                }
+            }
+        };
+
+        let _ = disable_raw_mode();
+
+        if let Some(idx) = choice {
+            match idx {
+                0 => add_schedule_menu(),
+                1 => {
                     clear_screen();
                     let _ = show_current_schedule();
                     tell_user("Press Enter to continue...");
                     let _ = get_input();
-                    manage_schedule();
                 }
-                3 => remove_schedule_menu(),
-                0 => main_menu(),
-                _ => manage_schedule(),
+                2 => remove_schedule_menu(),
+                3 => return,
+                _ => {}
             }
-        } else {
-            tell_user("Invalid choice.");
-            thread::sleep(Duration::from_secs(2));
-            manage_schedule();
         }
-    } else {
-        main_menu();
     }
 }
 
 fn add_schedule_menu() {
-    clear_screen();
-    tell_user("=== ADD NEW SCHEDULE ===");
-    tell_user("");
+    // Step 1: Choose frequency
+    let freq_items = vec![
+        "Daily (every day at 2:00 AM)",
+        "Weekly (every Sunday at 3:00 AM)",
+        "Weekdays (Monday-Friday at 2:00 AM)",
+        "Cancel",
+    ];
 
-    // Choose frequency
-    tell_user("Select frequency:");
-    tell_user("1) Daily (every day at 2:00 AM)");
-    tell_user("2) Weekly (every Sunday at 3:00 AM)");
-    tell_user("3) Weekdays (Monday-Friday at 2:00 AM)");
-    tell_user("0) Cancel");
-    tell_user_no_format("\nEnter choice (0-3): ");
+    let mut selected = 0;
 
-    let frequency = if let Ok(input) = get_input() {
-        match validate_menu_input(&input, 0, 3) {
-            Some(0) => {
-                manage_schedule();
-                return;
-            }
-            Some(1) => "daily",
-            Some(2) => "weekly",
-            Some(3) => "weekdays",
-            _ => {
-                tell_user("Invalid choice.");
-                thread::sleep(Duration::from_secs(2));
-                manage_schedule();
-                return;
+    let frequency = loop {
+        clear_screen();
+        println!("\n{}\n", "=== ADD NEW SCHEDULE ===".blue().bold());
+        println!("Select frequency:\n");
+
+        for (i, item) in freq_items.iter().enumerate() {
+            if i == selected {
+                println!("\t{} {}", "*".green().bold(), item.green());
+            } else {
+                println!("\t  {}", item);
             }
         }
-    } else {
-        manage_schedule();
-        return;
+
+        println!("\n{}", "Use ↑/↓ arrow keys to navigate, Enter to select".dimmed());
+
+        if enable_raw_mode().is_err() {
+            return;
+        }
+
+        let choice = loop {
+            if let Ok(Event::Key(KeyEvent { code, .. })) = event::read() {
+                match code {
+                    KeyCode::Up => {
+                        if selected > 0 {
+                            selected -= 1;
+                        }
+                        break None;
+                    }
+                    KeyCode::Down => {
+                        if selected < freq_items.len() - 1 {
+                            selected += 1;
+                        }
+                        break None;
+                    }
+                    KeyCode::Enter => break Some(selected),
+                    KeyCode::Esc => break Some(freq_items.len() - 1),
+                    _ => {}
+                }
+            }
+        };
+
+        let _ = disable_raw_mode();
+
+        if let Some(idx) = choice {
+            match idx {
+                0 => break "daily",
+                1 => break "weekly",
+                2 => break "weekdays",
+                _ => return,
+            }
+        }
     };
 
-    // Choose update mode
-    tell_user("");
-    tell_user("Select update mode:");
-    tell_user("1) All updates (recommended for servers)");
-    tell_user("2) Critical/security updates only");
-    tell_user("3) Force update with reboot (use with caution!)");
-    tell_user("0) Cancel");
-    tell_user_no_format("\nEnter choice (0-3): ");
+    // Step 2: Choose update mode
+    let mode_items = vec![
+        "All updates (recommended for servers)",
+        "Critical/security updates only",
+        "Force update with reboot (use with caution!)",
+        "Cancel",
+    ];
 
-    let mode = if let Ok(input) = get_input() {
-        match validate_menu_input(&input, 0, 3) {
-            Some(0) => {
-                manage_schedule();
-                return;
-            }
-            Some(1) => "all",
-            Some(2) => "critical",
-            Some(3) => "force",
-            _ => {
-                tell_user("Invalid choice.");
-                thread::sleep(Duration::from_secs(2));
-                manage_schedule();
-                return;
+    let mut selected = 0;
+
+    let mode = loop {
+        clear_screen();
+        println!("\n{}\n", "=== ADD NEW SCHEDULE ===".blue().bold());
+        println!("Select update mode:\n");
+
+        for (i, item) in mode_items.iter().enumerate() {
+            if i == selected {
+                println!("\t{} {}", "*".green().bold(), item.green());
+            } else {
+                println!("\t  {}", item);
             }
         }
-    } else {
-        manage_schedule();
-        return;
+
+        println!("\n{}", "Use ↑/↓ arrow keys to navigate, Enter to select".dimmed());
+
+        if enable_raw_mode().is_err() {
+            return;
+        }
+
+        let choice = loop {
+            if let Ok(Event::Key(KeyEvent { code, .. })) = event::read() {
+                match code {
+                    KeyCode::Up => {
+                        if selected > 0 {
+                            selected -= 1;
+                        }
+                        break None;
+                    }
+                    KeyCode::Down => {
+                        if selected < mode_items.len() - 1 {
+                            selected += 1;
+                        }
+                        break None;
+                    }
+                    KeyCode::Enter => break Some(selected),
+                    KeyCode::Esc => break Some(mode_items.len() - 1),
+                    _ => {}
+                }
+            }
+        };
+
+        let _ = disable_raw_mode();
+
+        if let Some(idx) = choice {
+            match idx {
+                0 => break "all",
+                1 => break "critical",
+                2 => break "force",
+                _ => return,
+            }
+        }
     };
 
     // Confirm
-    tell_user("");
+    clear_screen();
+    println!("\n{}\n", "=== CONFIRM SCHEDULE ===".blue().bold());
     println!("You are about to schedule:");
     println!("  Frequency: {}", frequency);
     println!("  Mode: {} updates", mode);
 
     if mode == "force" {
-        tell_user("");
+        println!();
         warning_message("WARNING: Force mode will automatically reboot your server!");
-        tell_user("This should only be used if you have redundancy or scheduled maintenance windows.");
+        println!("This should only be used if you have redundancy or scheduled maintenance windows.");
     }
 
     tell_user("");
@@ -537,8 +684,6 @@ fn add_schedule_menu() {
         tell_user("Cancelled.");
         thread::sleep(Duration::from_secs(1));
     }
-
-    manage_schedule();
 }
 
 fn remove_schedule_menu() {

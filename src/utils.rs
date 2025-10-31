@@ -112,14 +112,6 @@ fn get_number_suffix(num: u32) -> &'static str {
     }
 }
 
-/// Validate menu input is within range
-pub fn validate_menu_input(input: &str, min: i32, max: i32) -> Option<i32> {
-    match input.trim().parse::<i32>() {
-        Ok(val) if val >= min && val <= max => Some(val),
-        _ => None,
-    }
-}
-
 /// Check if running with sudo/root privileges
 pub fn check_sudo() -> bool {
     nix::unistd::geteuid().is_root()

@@ -1,6 +1,6 @@
 [package]
 name = "ubuntu-maintenance"
-version = "3.0.0"
+version = "3.1.0"
 edition = "2021"
 authors = ["Vincent T. Mossman"]
 description = "Production-ready command-line utility for automated Ubuntu/Debian server maintenance (Rust edition)"
@@ -16,3 +16,4 @@ chrono = "0.4"
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
 nix = { version = "0.29", features = ["user"] }
+crossterm = "0.28"

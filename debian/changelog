@@ -1,3 +1,17 @@
+ubuntu-maintenance (3.1.0-1~noble1) noble; urgency=medium
+
+  * NEW: Modern arrow key navigation for all interactive menus
+  * UI: Updated header text to "UBUNTU MAINTENANCE" with blue color
+  * UI: Menu items now use * selector with green highlighting
+  * UI: Added visual instructions for navigation (↑/↓ arrows, Enter)
+  * UI: Consistent styling across main menu, schedule management, and submenus
+  * IMPROVEMENT: Removed numeric input, replaced with intuitive arrow navigation
+  * ENHANCEMENT: Support for Esc and 'q' keys to cancel/exit
+  * DEPENDENCY: Added crossterm for advanced terminal control
+  * Clean compilation with zero warnings
+
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Fri, 31 Oct 2025 14:00:00 -0400
+
 ubuntu-maintenance (3.0.0-1~noble1) noble; urgency=medium
 
   * MAJOR UPDATE: Complete Rust rewrite
