@@ -3,6 +3,7 @@
 
 use crate::logger::log_message;
 use crate::utils::{error_message, success_message, tell_user};
+use colored::*;
 use std::fs;
 use std::io::Write;
 use std::process::Command;
@@ -28,8 +29,7 @@ pub fn has_existing_schedule() -> anyhow::Result<bool> {
 
 /// Display current ubuntu-maintenance cron schedules
 pub fn show_current_schedule() -> anyhow::Result<()> {
-    tell_user("=== CURRENT UPDATE SCHEDULES ===");
-    tell_user("");
+    println!("\n{}\n", "=== CURRENT UPDATE SCHEDULES ===".blue().bold());
 
     let output = Command::new("sh")
         .arg("-c")
@@ -38,8 +38,6 @@ pub fn show_current_schedule() -> anyhow::Result<()> {
 
     if !output.status.success() || output.stdout.is_empty() {
         tell_user("No scheduled updates found.");
-        tell_user("");
-        tell_user("You can add a schedule from the main menu option 6.");
         return Ok(());
     }
 

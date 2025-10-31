@@ -14,7 +14,7 @@ set -e
 
 # Configuration
 PACKAGE="ubuntu-maintenance"
-VERSION="2.1.0"
+VERSION="3.1.0"
 MAINTAINER_NAME="Vincent T. Mossman"
 MAINTAINER_EMAIL="vinny.mossman@gmail.com"
 
@@ -83,9 +83,37 @@ clean_build() {
     print_header "Cleaning Previous Builds"
 
     make clean 2>&1 | grep -v "No such file" || true
-    rm -f ../${PACKAGE}_* 2>/dev/null || true
+    # Remove build artifacts but keep orig.tar.xz
+    rm -f ../${PACKAGE}_*.dsc 2>/dev/null || true
+    rm -f ../${PACKAGE}_*.build 2>/dev/null || true
+    rm -f ../${PACKAGE}_*.buildinfo 2>/dev/null || true
+    rm -f ../${PACKAGE}_*.changes 2>/dev/null || true
+    # Remove debian tarballs but keep upstream orig tarball
+    find .. -maxdepth 1 -name "${PACKAGE}_*.tar.xz" ! -name "${PACKAGE}_${VERSION}.orig.tar.xz" -delete 2>/dev/null || true
 
     print_success "Build directory cleaned"
+    echo ""
+}
+
+create_orig_tarball() {
+    print_header "Creating Upstream Tarball"
+
+    # Check if orig tarball already exists
+    if [ -f "../${PACKAGE}_${VERSION}.orig.tar.xz" ]; then
+        print_success "Upstream tarball already exists"
+        return 0
+    fi
+
+    # Create orig tarball from git
+    if [ -d .git ]; then
+        print_success "Creating tarball from git..."
+        git archive --format=tar --prefix=${PACKAGE}-${VERSION}/ HEAD | xz > ../${PACKAGE}_${VERSION}.orig.tar.xz
+        print_success "Created ../${PACKAGE}_${VERSION}.orig.tar.xz"
+    else
+        print_error "Not a git repository and no orig tarball found"
+        return 1
+    fi
+
     echo ""
 }
 
@@ -109,6 +137,15 @@ build_source_package() {
     echo "Version: $VERSION_STRING"
     echo "Distribution: $dist"
     echo ""
+
+    # Update changelog distribution and version for this build
+    print_success "Updating changelog for $dist..."
+
+    # Replace both version and distribution in the first line of changelog
+    sed -i "1s/([^)]*) [a-z]*;/($VERSION_STRING) $dist;/" debian/changelog
+
+    # Verify the change
+    head -1 debian/changelog
 
     # Build source package
     print_success "Running debuild..."
@@ -211,6 +248,9 @@ build_all_distributions() {
     echo "Distributions: $SUPPORTED_DISTS"
     echo ""
 
+    # Create orig tarball once for all distributions
+    create_orig_tarball
+
     for dist in $SUPPORTED_DISTS; do
         clean_build
         build_source_package "$dist" "$revision"
@@ -279,6 +319,7 @@ main() {
     if [ "$build_all" = "yes" ]; then
         build_all_distributions "$revision" "$upload"
     else
+        create_orig_tarball
         clean_build
         build_source_package "$dist" "$revision"
 

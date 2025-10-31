@@ -1,16 +1,158 @@
-ubuntu-maintenance (3.1.0-1~noble1) noble; urgency=medium
+ubuntu-maintenance (3.1.0-1~noble1) focal; urgency=medium
 
-  * NEW: Modern arrow key navigation for all interactive menus
-  * UI: Updated header text to "UBUNTU MAINTENANCE" with blue color
-  * UI: Menu items now use * selector with green highlighting
-  * UI: Added visual instructions for navigation (↑/↓ arrows, Enter)
+  * MAJOR UI OVERHAUL: Modern arrow key navigation for all interactive menus
+  * UI: Updated header text to "UBUNTU MAINTENANCE" with consistent blue styling
+  * UI: Menu items use * selector with green highlighting for selected items
+  * UI: Added visual navigation instructions (↑/↓ arrows, Enter to select)
   * UI: Consistent styling across main menu, schedule management, and submenus
-  * IMPROVEMENT: Removed numeric input, replaced with intuitive arrow navigation
-  * ENHANCEMENT: Support for Esc and 'q' keys to cancel/exit
-  * DEPENDENCY: Added crossterm for advanced terminal control
-  * Clean compilation with zero warnings
+  * UI: Organized main menu with logical submenus (Run Updates, Manage Schedule)
+  * UI: Added blank line separators for better visual hierarchy
 
- -- Vincent T. Mossman <vinny.mossman@gmail.com>  Fri, 31 Oct 2025 14:00:00 -0400
+  * UPDATE WORKFLOW: Hidden verbose apt output, replaced with animated progress
+  * UPDATE: Animated ellipsis indicators show real-time progress during updates
+  * UPDATE: All update operations now silent with clean progress feedback
+  * UPDATE: Added operations: package lists, upgrades, autoremove, autoclean
+
+  * REBOOT: Interactive 5-minute countdown timer with cancellation support
+  * REBOOT: Press 'c' anytime during countdown to cancel scheduled reboot
+  * REBOOT: Clean reboot messaging (suppressed system broadcast messages)
+  * REBOOT: Custom cancellation notice with clear user feedback
+  * REBOOT: Real-time countdown display with minutes:seconds format
+
+  * SCHEDULE: Removed auto-display of schedules in management menu
+  * SCHEDULE: Cleaned up obsolete "menu option 6" references
+  * SCHEDULE: Reordered menu items (View, Add, Remove, Return)
+  * SCHEDULE: Improved menu navigation with proper blank line handling
+
+  * INFO: Completely redesigned system information display
+  * INFO: Compact single-screen layout (reduced from 20+ to 8 lines)
+  * INFO: Combined related information on single lines
+  * INFO: Shows: hostname, kernel, OS, uptime, last reboot, updates, disk, memory
+  * INFO: Update counts include total and security update breakdown
+  * INFO: Disk and memory usage show used/available/total in one line
+
+  * HELP: Redesigned help page for compact single-screen display
+  * HELP: Reduced from 20 to 14 lines while maintaining all information
+  * HELP: Cleaner section headers and tighter spacing
+  * HELP: Condensed interactive mode description to single line
+
+  * TECHNICAL: Support for Esc and 'q' keys to cancel/exit menus
+  * TECHNICAL: Added crossterm dependency for advanced terminal control
+  * TECHNICAL: Improved raw terminal mode handling for keyboard input
+  * TECHNICAL: Enhanced screen clearing to hide system messages
+  * TECHNICAL: Better process spawning for silent command execution
+  * TECHNICAL: Clean compilation with minimal warnings
+
+  * QUALITY: Overall 50%+ reduction in screen space usage
+  * QUALITY: Consistent blue headers throughout application
+  * QUALITY: Professional, modern terminal UI design
+  * QUALITY: Improved user experience with intuitive navigation
+
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Fri, 31 Oct 2025 16:00:00 -0400
+
+ubuntu-maintenance (3.1.0-1~jammy1) jammy; urgency=medium
+
+  * MAJOR UI OVERHAUL: Modern arrow key navigation for all interactive menus
+  * UI: Updated header text to "UBUNTU MAINTENANCE" with consistent blue styling
+  * UI: Menu items use * selector with green highlighting for selected items
+  * UI: Added visual navigation instructions (↑/↓ arrows, Enter to select)
+  * UI: Consistent styling across main menu, schedule management, and submenus
+  * UI: Organized main menu with logical submenus (Run Updates, Manage Schedule)
+  * UI: Added blank line separators for better visual hierarchy
+
+  * UPDATE WORKFLOW: Hidden verbose apt output, replaced with animated progress
+  * UPDATE: Animated ellipsis indicators show real-time progress during updates
+  * UPDATE: All update operations now silent with clean progress feedback
+  * UPDATE: Added operations: package lists, upgrades, autoremove, autoclean
+
+  * REBOOT: Interactive 5-minute countdown timer with cancellation support
+  * REBOOT: Press 'c' anytime during countdown to cancel scheduled reboot
+  * REBOOT: Clean reboot messaging (suppressed system broadcast messages)
+  * REBOOT: Custom cancellation notice with clear user feedback
+  * REBOOT: Real-time countdown display with minutes:seconds format
+
+  * SCHEDULE: Removed auto-display of schedules in management menu
+  * SCHEDULE: Cleaned up obsolete "menu option 6" references
+  * SCHEDULE: Reordered menu items (View, Add, Remove, Return)
+  * SCHEDULE: Improved menu navigation with proper blank line handling
+
+  * INFO: Completely redesigned system information display
+  * INFO: Compact single-screen layout (reduced from 20+ to 8 lines)
+  * INFO: Combined related information on single lines
+  * INFO: Shows: hostname, kernel, OS, uptime, last reboot, updates, disk, memory
+  * INFO: Update counts include total and security update breakdown
+  * INFO: Disk and memory usage show used/available/total in one line
+
+  * HELP: Redesigned help page for compact single-screen display
+  * HELP: Reduced from 20 to 14 lines while maintaining all information
+  * HELP: Cleaner section headers and tighter spacing
+  * HELP: Condensed interactive mode description to single line
+
+  * TECHNICAL: Support for Esc and 'q' keys to cancel/exit menus
+  * TECHNICAL: Added crossterm dependency for advanced terminal control
+  * TECHNICAL: Improved raw terminal mode handling for keyboard input
+  * TECHNICAL: Enhanced screen clearing to hide system messages
+  * TECHNICAL: Better process spawning for silent command execution
+  * TECHNICAL: Clean compilation with minimal warnings
+
+  * QUALITY: Overall 50%+ reduction in screen space usage
+  * QUALITY: Consistent blue headers throughout application
+  * QUALITY: Professional, modern terminal UI design
+  * QUALITY: Improved user experience with intuitive navigation
+
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Fri, 31 Oct 2025 16:00:00 -0400
+
+ubuntu-maintenance (3.1.0-1~focal1) focal; urgency=medium
+
+  * MAJOR UI OVERHAUL: Modern arrow key navigation for all interactive menus
+  * UI: Updated header text to "UBUNTU MAINTENANCE" with consistent blue styling
+  * UI: Menu items use * selector with green highlighting for selected items
+  * UI: Added visual navigation instructions (↑/↓ arrows, Enter to select)
+  * UI: Consistent styling across main menu, schedule management, and submenus
+  * UI: Organized main menu with logical submenus (Run Updates, Manage Schedule)
+  * UI: Added blank line separators for better visual hierarchy
+
+  * UPDATE WORKFLOW: Hidden verbose apt output, replaced with animated progress
+  * UPDATE: Animated ellipsis indicators show real-time progress during updates
+  * UPDATE: All update operations now silent with clean progress feedback
+  * UPDATE: Added operations: package lists, upgrades, autoremove, autoclean
+
+  * REBOOT: Interactive 5-minute countdown timer with cancellation support
+  * REBOOT: Press 'c' anytime during countdown to cancel scheduled reboot
+  * REBOOT: Clean reboot messaging (suppressed system broadcast messages)
+  * REBOOT: Custom cancellation notice with clear user feedback
+  * REBOOT: Real-time countdown display with minutes:seconds format
+
+  * SCHEDULE: Removed auto-display of schedules in management menu
+  * SCHEDULE: Cleaned up obsolete "menu option 6" references
+  * SCHEDULE: Reordered menu items (View, Add, Remove, Return)
+  * SCHEDULE: Improved menu navigation with proper blank line handling
+
+  * INFO: Completely redesigned system information display
+  * INFO: Compact single-screen layout (reduced from 20+ to 8 lines)
+  * INFO: Combined related information on single lines
+  * INFO: Shows: hostname, kernel, OS, uptime, last reboot, updates, disk, memory
+  * INFO: Update counts include total and security update breakdown
+  * INFO: Disk and memory usage show used/available/total in one line
+
+  * HELP: Redesigned help page for compact single-screen display
+  * HELP: Reduced from 20 to 14 lines while maintaining all information
+  * HELP: Cleaner section headers and tighter spacing
+  * HELP: Condensed interactive mode description to single line
+
+  * TECHNICAL: Support for Esc and 'q' keys to cancel/exit menus
+  * TECHNICAL: Added crossterm dependency for advanced terminal control
+  * TECHNICAL: Improved raw terminal mode handling for keyboard input
+  * TECHNICAL: Enhanced screen clearing to hide system messages
+  * TECHNICAL: Better process spawning for silent command execution
+  * TECHNICAL: Clean compilation with minimal warnings
+
+  * QUALITY: Overall 50%+ reduction in screen space usage
+  * QUALITY: Consistent blue headers throughout application
+  * QUALITY: Professional, modern terminal UI design
+  * QUALITY: Improved user experience with intuitive navigation
+
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Fri, 31 Oct 2025 16:00:00 -0400
 
 ubuntu-maintenance (3.0.0-1~noble1) noble; urgency=medium
 

@@ -14,7 +14,7 @@ use crossterm::{
 };
 use logger::{log_message, get_log_path};
 use schedule::{add_schedule, has_existing_schedule, remove_all_schedules, show_current_schedule};
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::thread;
 use std::time::Duration;
 use utils::*;
@@ -106,12 +106,11 @@ fn main() {
 
 fn main_menu() {
     let menu_items = vec![
-        "Force Update (with reboot)",
-        "All Update (no reboot)",
-        "Critical Update (security only)",
+        "Run Updates...",
+        "Manage Update Schedule...",
         "System Information",
         "Help",
-        "Manage Update Schedule",
+        "", // Blank line
         "Exit",
     ];
 
@@ -125,10 +124,12 @@ fn main_menu() {
 
         // Menu items
         for (i, item) in menu_items.iter().enumerate() {
-            if i == selected {
-                println!("\t{} {}", "*".green().bold(), item.green());
+            if item.is_empty() {
+                println!(); // Blank line
+            } else if i == selected {
+                println!("{} {}", "*".green().bold(), item.green());
             } else {
-                println!("\t  {}", item);
+                println!("  {}", item);
             }
         }
 
@@ -147,12 +148,28 @@ fn main_menu() {
                     KeyCode::Up => {
                         if selected > 0 {
                             selected -= 1;
+                            // Skip blank lines
+                            while selected < menu_items.len() && menu_items[selected].is_empty() {
+                                if selected > 0 {
+                                    selected -= 1;
+                                } else {
+                                    break;
+                                }
+                            }
                         }
                         break None;
                     }
                     KeyCode::Down => {
                         if selected < menu_items.len() - 1 {
                             selected += 1;
+                            // Skip blank lines
+                            while selected < menu_items.len() && menu_items[selected].is_empty() {
+                                if selected < menu_items.len() - 1 {
+                                    selected += 1;
+                                } else {
+                                    break;
+                                }
+                            }
                         }
                         break None;
                     }
@@ -160,7 +177,7 @@ fn main_menu() {
                         break Some(selected);
                     }
                     KeyCode::Char('q') | KeyCode::Esc => {
-                        break Some(menu_items.len() - 1); // Exit option
+                        break Some(5); // Exit option (last item)
                     }
                     _ => {}
                 }
@@ -170,6 +187,111 @@ fn main_menu() {
         let _ = disable_raw_mode();
 
         // Process selection
+        if let Some(idx) = choice {
+            match idx {
+                0 => {
+                    run_updates_menu();
+                }
+                1 => {
+                    manage_schedule();
+                }
+                2 => {
+                    show_information();
+                    tell_user("");
+                    tell_user("Press Enter to return to menu...");
+                    let _ = get_input();
+                }
+                3 => {
+                    show_help();
+                    tell_user("Press Enter to return to menu...");
+                    let _ = get_input();
+                }
+                5 => {
+                    tell_user("Exiting. No changes made.");
+                    log_message("Program exited by user");
+                    return;
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+fn run_updates_menu() {
+    let menu_items = vec![
+        "Force Update (with reboot)",
+        "All Update (no reboot)",
+        "Critical Update (security only)",
+        "",
+        "Return to main menu",
+    ];
+
+    let mut selected = 0;
+
+    loop {
+        clear_screen();
+        println!("\n{}\n", "=== RUN UPDATES ===".blue().bold());
+
+        // Menu items
+        for (i, item) in menu_items.iter().enumerate() {
+            if item.is_empty() {
+                println!();
+            } else if i == selected {
+                println!("{} {}", "*".green().bold(), item.green());
+            } else {
+                println!("  {}", item);
+            }
+        }
+
+        println!("\n{}", "Use ↑/↓ arrow keys to navigate, Enter to select".dimmed());
+
+        if enable_raw_mode().is_err() {
+            error_message("Failed to enable terminal raw mode");
+            return;
+        }
+
+        let choice = loop {
+            if let Ok(Event::Key(KeyEvent { code, .. })) = event::read() {
+                match code {
+                    KeyCode::Up => {
+                        if selected > 0 {
+                            selected -= 1;
+                            while selected < menu_items.len() && menu_items[selected].is_empty() {
+                                if selected > 0 {
+                                    selected -= 1;
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+                        break None;
+                    }
+                    KeyCode::Down => {
+                        if selected < menu_items.len() - 1 {
+                            selected += 1;
+                            while selected < menu_items.len() && menu_items[selected].is_empty() {
+                                if selected < menu_items.len() - 1 {
+                                    selected += 1;
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+                        break None;
+                    }
+                    KeyCode::Enter => {
+                        break Some(selected);
+                    }
+                    KeyCode::Char('q') | KeyCode::Esc => {
+                        break Some(4); // Return option
+                    }
+                    _ => {}
+                }
+            }
+        };
+
+        let _ = disable_raw_mode();
+
         if let Some(idx) = choice {
             let state = AppState { dry_run: false };
 
@@ -183,25 +305,7 @@ fn main_menu() {
                 2 => {
                     critical_update(&state);
                 }
-                3 => {
-                    show_information();
-                    tell_user("");
-                    tell_user("Press Enter to return to menu...");
-                    let _ = get_input();
-                }
-                4 => {
-                    show_help();
-                    tell_user("Press Enter to return to menu...");
-                    let _ = get_input();
-                }
-                5 => {
-                    manage_schedule();
-                }
-                6 => {
-                    tell_user("Exiting. No changes made.");
-                    log_message("Program exited by user");
-                    return;
-                }
+                4 => return,
                 _ => {}
             }
         }
@@ -210,111 +314,166 @@ fn main_menu() {
 
 fn show_help() {
     clear_screen();
-    println!("\n{}\n", "=== UBUNTU MAINTENANCE ===".blue().bold());
-    tell_user("");
-    tell_user("Usage: sudo ubuntu-maintenance [options]");
-    tell_user("");
-    tell_user("Options:");
-    tell_user("  -f, --force       Force update with reboot");
-    tell_user("  -a, --all         All updates without reboot");
-    tell_user("  -c, --critical    Critical security updates only");
-    tell_user("  -i, --info        Display system information");
-    tell_user("  -d, --dry-run     Preview updates without applying");
-    tell_user("  -h, --help        Display this help message");
-    tell_user("");
-    tell_user("Interactive Mode:");
-    tell_user("  Run without arguments for interactive menu");
-    tell_user("");
-    tell_user("Examples:");
-    tell_user("  sudo ubuntu-maintenance            # Interactive mode");
-    tell_user("  sudo ubuntu-maintenance -a         # Run all updates");
-    tell_user("  sudo ubuntu-maintenance --dry-run -a  # Preview all updates");
-    tell_user("");
-    println!("Logs are written to: {}", get_log_path());
-    tell_user("");
+    println!("\n{}\n", "=== HELP ===".blue().bold());
+    println!("Usage: sudo ubuntu-maintenance [options]\n");
+    println!("Options:");
+    println!("  -f, --force       Force update with reboot");
+    println!("  -a, --all         All updates without reboot");
+    println!("  -c, --critical    Critical security updates only");
+    println!("  -i, --info        Display system information");
+    println!("  -d, --dry-run     Preview updates without applying");
+    println!("  -h, --help        Display this help message\n");
+    println!("Interactive Mode: Run without arguments for interactive menu\n");
+    println!("Examples:");
+    println!("  sudo ubuntu-maintenance              # Interactive mode");
+    println!("  sudo ubuntu-maintenance -a           # Run all updates");
+    println!("  sudo ubuntu-maintenance --dry-run -a # Preview updates\n");
+    println!("Logs: {}\n", get_log_path());
 }
 
 fn show_information() {
     clear_screen();
-    tell_user("=== SYSTEM INFORMATION ===");
-    tell_user("");
+    println!("\n{}\n", "=== SYSTEM INFORMATION ===".blue().bold());
 
-    // System details using uname
-    if let Ok(output) = Command::new("uname").arg("-a").output() {
-        println!("System:       {}", String::from_utf8_lossy(&output.stdout).trim());
+    // Hostname and kernel
+    if let Ok(output) = Command::new("uname").arg("-n").output() {
+        print!("Hostname: {}", String::from_utf8_lossy(&output.stdout).trim());
+    }
+    if let Ok(output) = Command::new("uname").arg("-r").output() {
+        println!(" | Kernel: {}", String::from_utf8_lossy(&output.stdout).trim());
+    } else {
+        println!();
     }
 
-    tell_user("");
-    tell_user("Current Time:");
-    custom_date_formatted();
+    // OS version
+    if let Ok(output) = Command::new("sh")
+        .arg("-c")
+        .arg("lsb_release -d 2>/dev/null | cut -f2")
+        .output()
+    {
+        println!("OS: {}", String::from_utf8_lossy(&output.stdout).trim());
+    }
 
-    tell_user("");
-    tell_user("=== PACKAGE INFORMATION ===");
-    let _ = tell_system("apt --version");
+    // Uptime and last reboot
+    if let Ok(output) = Command::new("uptime").arg("-p").output() {
+        print!("Uptime: {}", String::from_utf8_lossy(&output.stdout).trim());
+    }
+    if let Ok(output) = Command::new("sh")
+        .arg("-c")
+        .arg("who -b | awk '{print $3, $4}'")
+        .output()
+    {
+        println!(" | Last reboot: {}", String::from_utf8_lossy(&output.stdout).trim());
+    } else {
+        println!();
+    }
 
-    tell_user("");
-    tell_user("=== AVAILABLE UPDATES ===");
-    let _ = tell_system("apt list --upgradable 2>/dev/null | grep -v 'Listing...' | wc -l | xargs echo 'Packages with updates available:'");
+    println!();
 
-    tell_user("");
-    tell_user("=== SECURITY UPDATES ===");
-    let _ = tell_system("apt list --upgradable 2>/dev/null | grep -i security | wc -l | xargs echo 'Security updates available:'");
+    // Package updates
+    let updates_count = Command::new("sh")
+        .arg("-c")
+        .arg("apt list --upgradable 2>/dev/null | grep -v 'Listing...' | wc -l")
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8_lossy(&o.stdout).trim().parse::<i32>().ok())
+        .unwrap_or(0);
 
-    tell_user("");
-    tell_user("=== DISK USAGE ===");
-    let _ = tell_system("df -h / | tail -1 | awk '{print \"Root partition: \" $5 \" used of \" $2}'");
+    let security_count = Command::new("sh")
+        .arg("-c")
+        .arg("apt list --upgradable 2>/dev/null | grep -i security | wc -l")
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8_lossy(&o.stdout).trim().parse::<i32>().ok())
+        .unwrap_or(0);
 
-    tell_user("");
-    tell_user("=== SYSTEM UPTIME ===");
-    let _ = tell_system("uptime -p");
+    println!("Updates: {} available ({} security)", updates_count, security_count);
 
-    tell_user("");
-    tell_user("=== LAST REBOOT ===");
-    let _ = tell_system("who -b");
+    // Disk usage
+    if let Ok(output) = Command::new("sh")
+        .arg("-c")
+        .arg("df -h / | tail -1 | awk '{print $5 \" used | \" $4 \" free | \" $2 \" total\"}'")
+        .output()
+    {
+        println!("Disk (root): {}", String::from_utf8_lossy(&output.stdout).trim());
+    }
 
-    tell_user("");
+    // Memory usage
+    if let Ok(output) = Command::new("sh")
+        .arg("-c")
+        .arg("free -h | awk 'NR==2 {print $3 \" used | \" $7 \" available | \" $2 \" total\"}'")
+        .output()
+    {
+        println!("Memory: {}", String::from_utf8_lossy(&output.stdout).trim());
+    }
+
+    println!();
     log_message("System information displayed");
 }
 
-fn complete_details() {
-    tell_user("");
-    tell_user("==== UPDATE COMPLETE ====");
-
-    let _ = tell_system("apt --version");
-
-    tell_user("");
-    tell_user("Update completed at:");
-    custom_date_formatted();
-
-    tell_user("");
-    tell_user("A system reboot is recommended to ensure all updates take effect.");
-    tell_user("You can reboot now using: sudo shutdown -r +5");
-
-    log_message("Update completed successfully");
-}
 
 fn safe_reboot(delay_minutes: i32) {
     tell_user("");
-    tell_user("==== SCHEDULING SYSTEM REBOOT ====");
+    println!("\n{}", "==== SYSTEM REBOOT SCHEDULED ====".blue().bold());
 
-    tell_user_custom(&"Current system time:".green().to_string(), 1, 0);
+    println!("\nCurrent system time:");
     custom_date_formatted();
 
-    println!("\nReboot scheduled for {} minutes from now.", delay_minutes);
-    tell_user("To cancel: sudo shutdown -c");
-    tell_user("");
+    println!("\nSystem will reboot in {} minutes", delay_minutes);
 
+    // Schedule the reboot silently
     let reboot_command = format!(
-        "sudo shutdown -r +{} \"System update complete. Rebooting in {} minutes. Use 'shutdown -c' to cancel.\"",
+        "sudo shutdown -r +{} \"System update complete. Rebooting in {} minutes.\"",
         delay_minutes, delay_minutes
     );
 
-    if tell_system(&reboot_command).unwrap_or(false) {
+    let result = Command::new("sh")
+        .arg("-c")
+        .arg(&reboot_command)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
+
+    // Give shutdown command time to send broadcast message
+    thread::sleep(Duration::from_millis(500));
+
+    if result.is_ok() && result.unwrap().success() {
         log_message("System reboot scheduled");
-        tell_user("Please save your work and logout, or cancel the reboot if needed.");
+
+        // Clear screen to hide broadcast messages
+        clear_screen();
+
+        // Redisplay clean interface
+        println!("\n{}", "==== SYSTEM REBOOT SCHEDULED ====".blue().bold());
+        println!("\nCurrent system time:");
+        custom_date_formatted();
+        println!("\nSystem will reboot in {} minutes", delay_minutes);
+
+        // Show countdown with cancel option
+        let seconds = (delay_minutes * 60) as u32;
+        let completed = countdown_with_cancel(seconds, "System will reboot when timer reaches 0:00");
+
+        if !completed {
+            log_message("Reboot cancelled by user");
+
+            // Clear screen again to hide shutdown cancel broadcast
+            thread::sleep(Duration::from_millis(500));
+            clear_screen();
+
+            println!();
+            success_message("✓ Reboot successfully cancelled");
+            println!("\nThe system will NOT reboot automatically.");
+            println!("You can manually reboot later using: sudo reboot");
+            tell_user("");
+            tell_user("Press Enter to return to menu...");
+            let _ = get_input();
+        }
     } else {
         error_message("ERROR: Failed to schedule reboot. Please reboot manually.");
         log_message("ERROR: Failed to schedule reboot");
+        tell_user("");
+        tell_user("Press Enter to return to menu...");
+        let _ = get_input();
     }
 }
 
@@ -331,33 +490,32 @@ fn force_update(state: &AppState) {
         tell_user("  4. sudo apt autoclean");
         tell_user("  5. System reboot scheduled");
         tell_user("");
+        tell_user("Press Enter to return to menu...");
+        let _ = get_input();
         return;
     }
 
-    tell_user("==== UPDATING PACKAGE INFORMATION ====");
-    if !tell_system("sudo apt update").unwrap_or(false) {
-        warning_message("WARNING: Package update had issues. Check logs.");
-    }
+    clear_screen();
+    println!("\n{}\n", "=== FORCE UPDATE (WITH REBOOT) ===".blue().bold());
+
+    tell_system_with_progress("sudo apt update", "Updating package lists").ok();
+
+    println!();
+    tell_system_with_progress("sudo apt full-upgrade -y", "Upgrading packages (this may take several minutes)").ok();
+
+    println!();
+    tell_system_with_progress("sudo apt autoremove -y", "Removing obsolete packages").ok();
+
+    println!();
+    tell_system_with_progress("sudo apt autoclean", "Cleaning package cache").ok();
+
+    println!();
+    success_message("✓ All updates completed successfully!");
 
     tell_user("");
-    tell_user("==== INSTALLING ALL AVAILABLE PACKAGE UPGRADES ====");
-    tell_user("This may take several minutes depending on available updates...");
-    if !tell_system("sudo apt full-upgrade -y").unwrap_or(false) {
-        warning_message("WARNING: Package upgrade had issues. Check logs.");
-        log_message("WARNING: full-upgrade returned non-zero exit code");
-    }
+    tell_user("Update completed at:");
+    custom_date_formatted();
 
-    tell_user("");
-    tell_user("==== REMOVING OBSOLETE PACKAGES ====");
-    let _ = tell_system("sudo apt autoremove -y");
-
-    tell_user("");
-    tell_user("==== CLEANING PACKAGE CACHE ====");
-    let _ = tell_system("sudo apt autoclean");
-
-    complete_details();
-
-    tell_user("");
     safe_reboot(REBOOT_DELAY_MINUTES);
 
     log_message("=== FORCE UPDATE completed ===");
@@ -375,31 +533,39 @@ fn all_update(state: &AppState) {
         tell_user("  3. sudo apt autoremove");
         tell_user("  4. sudo apt autoclean");
         tell_user("");
+        tell_user("Press Enter to return to menu...");
+        let _ = get_input();
         return;
     }
 
-    tell_user("==== UPDATING PACKAGE INFORMATION ====");
-    if !tell_system("sudo apt update").unwrap_or(false) {
-        warning_message("WARNING: Package update had issues. Check logs.");
-    }
+    clear_screen();
+    println!("\n{}\n", "=== ALL UPDATE (NO REBOOT) ===".blue().bold());
+
+    tell_system_with_progress("sudo apt update", "Updating package lists").ok();
+
+    println!();
+    tell_system_with_progress("sudo apt full-upgrade", "Upgrading packages (this may take several minutes)").ok();
+
+    println!();
+    tell_system_with_progress("sudo apt autoremove", "Removing obsolete packages").ok();
+
+    println!();
+    tell_system_with_progress("sudo apt autoclean", "Cleaning package cache").ok();
+
+    println!();
+    success_message("✓ All updates completed successfully!");
 
     tell_user("");
-    tell_user("==== INSTALLING ALL AVAILABLE PACKAGE UPGRADES ====");
-    tell_user("This may take several minutes depending on available updates...");
-    if !tell_system("sudo apt full-upgrade").unwrap_or(false) {
-        warning_message("WARNING: Package upgrade had issues. Check logs.");
-        log_message("WARNING: full-upgrade returned non-zero exit code");
-    }
+    tell_user("Update completed at:");
+    custom_date_formatted();
 
     tell_user("");
-    tell_user("==== REMOVING OBSOLETE PACKAGES ====");
-    let _ = tell_system("sudo apt autoremove");
+    tell_user("A system reboot is recommended to ensure all updates take effect.");
+    tell_user("You can reboot manually using: sudo reboot");
 
     tell_user("");
-    tell_user("==== CLEANING PACKAGE CACHE ====");
-    let _ = tell_system("sudo apt autoclean");
-
-    complete_details();
+    tell_user("Press Enter to return to menu...");
+    let _ = get_input();
 
     log_message("=== ALL UPDATE completed ===");
 }
@@ -415,36 +581,46 @@ fn critical_update(state: &AppState) {
         tell_user("  2. sudo apt upgrade (security updates)");
         tell_user("  3. sudo apt autoclean");
         tell_user("");
+        tell_user("Press Enter to return to menu...");
+        let _ = get_input();
         return;
     }
 
-    tell_user("==== UPDATING PACKAGE INFORMATION ====");
-    if !tell_system("sudo apt update").unwrap_or(false) {
-        warning_message("WARNING: Package update had issues. Check logs.");
-    }
+    clear_screen();
+    println!("\n{}\n", "=== CRITICAL UPDATE (SECURITY ONLY) ===".blue().bold());
+
+    tell_system_with_progress("sudo apt update", "Updating package lists").ok();
+
+    println!();
+    tell_system_with_progress("sudo apt upgrade -y", "Installing security updates").ok();
+
+    println!();
+    tell_system_with_progress("sudo apt autoclean", "Cleaning package cache").ok();
+
+    println!();
+    success_message("✓ Security updates completed successfully!");
 
     tell_user("");
-    tell_user("==== INSTALLING CRITICAL PACKAGE UPGRADES ====");
-    tell_user("Installing security and critical updates only...");
-    if !tell_system("sudo apt upgrade -y").unwrap_or(false) {
-        warning_message("WARNING: Package upgrade had issues. Check logs.");
-        log_message("WARNING: upgrade returned non-zero exit code");
-    }
+    tell_user("Update completed at:");
+    custom_date_formatted();
 
     tell_user("");
-    tell_user("==== CLEANING PACKAGE CACHE ====");
-    let _ = tell_system("sudo apt autoclean");
+    tell_user("A system reboot is recommended to ensure all updates take effect.");
+    tell_user("You can reboot manually using: sudo reboot");
 
-    complete_details();
+    tell_user("");
+    tell_user("Press Enter to return to menu...");
+    let _ = get_input();
 
     log_message("=== CRITICAL UPDATE completed ===");
 }
 
 fn manage_schedule() {
     let menu_items = vec![
-        "Add a new schedule",
         "View current schedule",
+        "Add a new schedule",
         "Remove all schedules",
+        "",
         "Return to main menu",
     ];
 
@@ -454,16 +630,14 @@ fn manage_schedule() {
         clear_screen();
         println!("\n{}\n", "=== MANAGE UPDATE SCHEDULE ===".blue().bold());
 
-        // Show current schedule first
-        let _ = show_current_schedule();
-        println!();
-
         // Menu items
         for (i, item) in menu_items.iter().enumerate() {
-            if i == selected {
-                println!("\t{} {}", "*".green().bold(), item.green());
+            if item.is_empty() {
+                println!();
+            } else if i == selected {
+                println!("{} {}", "*".green().bold(), item.green());
             } else {
-                println!("\t  {}", item);
+                println!("  {}", item);
             }
         }
 
@@ -480,12 +654,26 @@ fn manage_schedule() {
                     KeyCode::Up => {
                         if selected > 0 {
                             selected -= 1;
+                            while selected < menu_items.len() && menu_items[selected].is_empty() {
+                                if selected > 0 {
+                                    selected -= 1;
+                                } else {
+                                    break;
+                                }
+                            }
                         }
                         break None;
                     }
                     KeyCode::Down => {
                         if selected < menu_items.len() - 1 {
                             selected += 1;
+                            while selected < menu_items.len() && menu_items[selected].is_empty() {
+                                if selected < menu_items.len() - 1 {
+                                    selected += 1;
+                                } else {
+                                    break;
+                                }
+                            }
                         }
                         break None;
                     }
@@ -493,7 +681,7 @@ fn manage_schedule() {
                         break Some(selected);
                     }
                     KeyCode::Char('q') | KeyCode::Esc => {
-                        break Some(menu_items.len() - 1);
+                        break Some(4);
                     }
                     _ => {}
                 }
@@ -504,15 +692,15 @@ fn manage_schedule() {
 
         if let Some(idx) = choice {
             match idx {
-                0 => add_schedule_menu(),
-                1 => {
+                0 => {
                     clear_screen();
                     let _ = show_current_schedule();
                     tell_user("Press Enter to continue...");
                     let _ = get_input();
                 }
+                1 => add_schedule_menu(),
                 2 => remove_schedule_menu(),
-                3 => return,
+                4 => return,
                 _ => {}
             }
         }
@@ -537,9 +725,9 @@ fn add_schedule_menu() {
 
         for (i, item) in freq_items.iter().enumerate() {
             if i == selected {
-                println!("\t{} {}", "*".green().bold(), item.green());
+                println!("{} {}", "*".green().bold(), item.green());
             } else {
-                println!("\t  {}", item);
+                println!("  {}", item);
             }
         }
 
@@ -600,9 +788,9 @@ fn add_schedule_menu() {
 
         for (i, item) in mode_items.iter().enumerate() {
             if i == selected {
-                println!("\t{} {}", "*".green().bold(), item.green());
+                println!("{} {}", "*".green().bold(), item.green());
             } else {
-                println!("\t  {}", item);
+                println!("  {}", item);
             }
         }
 

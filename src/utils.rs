@@ -5,6 +5,8 @@ use chrono::{Datelike, Local};
 use colored::*;
 use std::io::{self, Write};
 use std::process::{Command, Stdio};
+use std::thread;
+use std::time::Duration;
 
 use crate::logger::log_command;
 
@@ -20,6 +22,7 @@ pub fn tell_user(message: &str) {
 }
 
 /// Print message with custom formatting
+#[allow(dead_code)]
 pub fn tell_user_custom(message: &str, leading_nl: usize, trailing_nl: usize) {
     for _ in 0..leading_nl {
         println!();
@@ -71,6 +74,66 @@ pub fn tell_system(command: &str) -> anyhow::Result<bool> {
     }
 
     Ok(success)
+}
+
+/// Execute a system command silently with animated progress indicator
+pub fn tell_system_with_progress(command: &str, message: &str) -> anyhow::Result<bool> {
+    log_command(command, true);
+
+    print!("{}", message);
+    io::stdout().flush()?;
+
+    // Start the command
+    let mut child = if command.contains('|') || command.contains('>') {
+        Command::new("sh")
+            .arg("-c")
+            .arg(command)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()?
+    } else {
+        let parts: Vec<&str> = command.split_whitespace().collect();
+        if parts.is_empty() {
+            return Ok(false);
+        }
+
+        Command::new(parts[0])
+            .args(&parts[1..])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()?
+    };
+
+    // Animate progress while command runs
+    let mut dots = 0;
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                println!(); // New line after progress
+                let success = status.success();
+                if success {
+                    success_message("✓ Complete");
+                } else {
+                    error_message("✗ Failed");
+                    log_command(command, false);
+                }
+                return Ok(success);
+            }
+            Ok(None) => {
+                // Still running, show progress
+                dots = (dots + 1) % 4;
+                let indicator = ".".repeat(dots);
+                print!("\r{}{:<3}", message, indicator);
+                io::stdout().flush()?;
+                thread::sleep(Duration::from_millis(500));
+            }
+            Err(e) => {
+                println!();
+                error_message(&format!("Error waiting for command: {}", e));
+                return Err(e.into());
+            }
+        }
+    }
 }
 
 /// Display formatted date and time information
@@ -147,4 +210,61 @@ pub fn confirm(prompt: &str) -> bool {
     } else {
         false
     }
+}
+
+/// Display countdown timer with cancel option
+/// Returns true if countdown completed, false if cancelled
+pub fn countdown_with_cancel(seconds: u32, message: &str) -> bool {
+    use crossterm::{
+        event::{self, Event, KeyCode, poll},
+        terminal::{disable_raw_mode, enable_raw_mode},
+    };
+    use std::process::{Command as ProcessCommand, Stdio};
+
+    println!("\n{}", message);
+    println!();
+    println!("{}", "Press 'c' to cancel reboot".yellow().bold());
+    println!();
+
+    if enable_raw_mode().is_err() {
+        error_message("Failed to enable raw mode");
+        return true; // Proceed with reboot if we can't enable raw mode
+    }
+
+    let mut remaining = seconds;
+
+    while remaining > 0 {
+        let minutes = remaining / 60;
+        let secs = remaining % 60;
+
+        print!("\r⏱  Time to reboot: {}:{:02} ", minutes, secs);
+        io::stdout().flush().unwrap();
+
+        // Check for key press (non-blocking)
+        if poll(Duration::from_secs(1)).unwrap_or(false) {
+            if let Ok(Event::Key(key)) = event::read() {
+                if let KeyCode::Char('c') | KeyCode::Char('C') = key.code {
+                    let _ = disable_raw_mode();
+                    println!("\n");
+
+                    // Cancel the scheduled shutdown
+                    let _ = ProcessCommand::new("sudo")
+                        .arg("shutdown")
+                        .arg("-c")
+                        .stdout(Stdio::null())
+                        .stderr(Stdio::null())
+                        .output();
+
+                    return false;
+                }
+            }
+        }
+
+        remaining -= 1;
+    }
+
+    let _ = disable_raw_mode();
+    println!("\n");
+    success_message("Reboot proceeding...");
+    true
 }

@@ -25,7 +25,7 @@ build:
 
 clean:
 	@echo "Cleaning build artifacts..."
-	cargo clean
+	-cargo clean 2>/dev/null || true
 	rm -f $(MANPAGE).gz
 	rm -rf debian/ubuntu-maintenance
 	rm -rf debian/.debhelper
