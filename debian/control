@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Vincent T. Mossman <vinny.mossman@gmail.com>
 Build-Depends: debhelper-compat (= 13),
                cargo,
-               rustc (>= 1.70)
+               rustc (>= 1.56)
 Standards-Version: 4.6.0
 Homepage: https://github.com/VinnyMo/ubuntuMaintenance
 Vcs-Browser: https://github.com/VinnyMo/ubuntuMaintenance

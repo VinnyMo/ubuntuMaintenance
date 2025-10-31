@@ -14,7 +14,7 @@ set -e
 
 # Configuration
 PACKAGE="ubuntu-maintenance"
-VERSION="3.1.2"
+VERSION="3.1.3"
 MAINTAINER_NAME="Vincent T. Mossman"
 MAINTAINER_EMAIL="vinny.mossman@gmail.com"
 
@@ -25,8 +25,8 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Supported distributions
-SUPPORTED_DISTS="focal jammy noble"
+# Supported distributions (focal removed - rustc 1.41 too old for edition 2021)
+SUPPORTED_DISTS="jammy noble"
 DEFAULT_DIST="jammy"
 
 # Functions
@@ -227,14 +227,15 @@ Options:
     -a, --all           Build for all supported distributions
 
 Distributions:
-    focal               Ubuntu 20.04 LTS (Focal Fossa)
     jammy               Ubuntu 22.04 LTS (Jammy Jellyfish) [default]
     noble               Ubuntu 24.04 LTS (Noble Numbat)
 
+Note: Ubuntu 20.04 (Focal) is not supported due to rustc 1.41 being too old for Rust edition 2021 (requires 1.56+)
+
 Examples:
     $0                  # Build for jammy (default)
-    $0 focal            # Build for focal
-    $0 --all            # Build for all distributions
+    $0 noble            # Build for noble
+    $0 --all            # Build for all distributions (jammy, noble)
     $0 -n jammy         # Build for jammy, don't upload
 
 Environment Variables:

@@ -1,12 +1,15 @@
-ubuntu-maintenance (3.1.2-1~noble1) noble; urgency=medium
+ubuntu-maintenance (3.1.3-1~noble1) noble; urgency=medium
 
+  * PACKAGING: Lowered rustc requirement from 1.70 to 1.56 (minimum for edition 2021)
+  * PACKAGING: Dropped Ubuntu 20.04 (Focal) support - rustc 1.41 too old
+  * PACKAGING: Now supports Ubuntu 22.04 (Jammy) and 24.04 (Noble) only
   * PACKAGING: Fixed invalid Rust edition (2021, not 2025)
   * PACKAGING: Fixed PPA build system for multi-distribution uploads
   * PACKAGING: Corrected orig.tar.xz handling to prevent checksum conflicts
   * PACKAGING: Build script now properly reuses upstream tarball across distributions
   * PACKAGING: Added Cargo.lock for reproducible builds
 
- -- Vincent T. Mossman <vinny.mossman@gmail.com>  Fri, 31 Oct 2025 19:15:00 -0400
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Fri, 31 Oct 2025 19:30:00 -0400
 
 ubuntu-maintenance (3.1.0-1~noble1) noble; urgency=medium
 
