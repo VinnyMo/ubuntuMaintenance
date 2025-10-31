@@ -1,3 +1,10 @@
+ubuntu-maintenance (3.1.5-1~noble1) noble; urgency=medium
+
+  * PACKAGING: Downgraded Cargo.lock to version 3 for Noble compatibility
+  * PACKAGING: Fixed build failure caused by Cargo.lock version 4 format
+
+ -- Vincent T. Mossman <vincent.mossman@gmail.com>  Fri, 31 Oct 2025 23:40:00 +0000
+
 ubuntu-maintenance (3.1.4-1~noble1) noble; urgency=medium
 
   * PACKAGING: Restored rustc requirement to 1.70+ (required by clap 4.x dependency)
