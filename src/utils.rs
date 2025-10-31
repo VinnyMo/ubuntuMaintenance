@@ -41,6 +41,7 @@ pub fn tell_user_no_format(message: &str) {
 }
 
 /// Execute a system command and display output
+#[allow(dead_code)]
 pub fn tell_system(command: &str) -> anyhow::Result<bool> {
     log_command(command, true);
 
