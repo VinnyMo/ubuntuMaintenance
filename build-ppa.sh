@@ -127,12 +127,8 @@ build_source_package() {
     export DEBEMAIL="$MAINTAINER_EMAIL"
     export DEBFULLNAME="$MAINTAINER_NAME"
 
-    # Determine version string
-    if [ "$dist" = "$DEFAULT_DIST" ]; then
-        VERSION_STRING="${VERSION}-${revision}"
-    else
-        VERSION_STRING="${VERSION}-${revision}~${dist}1"
-    fi
+    # Determine version string (always use ~dist1 for PPA packages)
+    VERSION_STRING="${VERSION}-${revision}~${dist}1"
 
     echo "Version: $VERSION_STRING"
     echo "Distribution: $dist"
@@ -149,7 +145,7 @@ build_source_package() {
 
     # Build source package
     print_success "Running debuild..."
-    if debuild -S -sa -d 2>&1 | tee /tmp/debuild.log | grep -E "dpkg-buildpackage|dpkg-source|error|warning"; then
+    if debuild -S -sa -d -k57657DC3657426DA28BC05B99D9EDCF0D2CDF97A 2>&1 | tee /tmp/debuild.log | grep -E "dpkg-buildpackage|dpkg-source|error|warning"; then
         print_success "Source package built successfully"
     else
         print_error "Build failed! Check /tmp/debuild.log"
@@ -167,11 +163,8 @@ upload_to_ppa() {
     local dist=$1
     local revision=$2
 
-    if [ "$dist" = "$DEFAULT_DIST" ]; then
-        VERSION_STRING="${VERSION}-${revision}"
-    else
-        VERSION_STRING="${VERSION}-${revision}~${dist}1"
-    fi
+    # Always use ~dist1 for PPA packages
+    VERSION_STRING="${VERSION}-${revision}~${dist}1"
 
     local changes_file="../${PACKAGE}_${VERSION_STRING}_source.changes"
 
@@ -327,11 +320,7 @@ main() {
             upload_to_ppa "$dist" "$revision"
         else
             print_warning "Build complete. Run manually to upload:"
-            if [ "$dist" = "$DEFAULT_DIST" ]; then
-                echo "  dput ppa ../${PACKAGE}_${VERSION}-${revision}_source.changes"
-            else
-                echo "  dput ppa ../${PACKAGE}_${VERSION}-${revision}~${dist}1_source.changes"
-            fi
+            echo "  dput ppa ../${PACKAGE}_${VERSION}-${revision}~${dist}1_source.changes"
         fi
     fi
 

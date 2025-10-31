@@ -1,4 +1,4 @@
-ubuntu-maintenance (3.1.0-1~focal1) focal; urgency=medium
+ubuntu-maintenance (3.1.0-1~noble1) noble; urgency=medium
 
   * MAJOR UI OVERHAUL: Modern arrow key navigation for all interactive menus
   * UI: Updated header text to "UBUNTU MAINTENANCE" with consistent blue styling
