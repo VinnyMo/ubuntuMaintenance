@@ -120,6 +120,7 @@ create_orig_tarball() {
 build_source_package() {
     local dist=$1
     local revision=$2
+    local include_orig=$3  # "yes" or "no"
 
     print_header "Building Source Package for $dist"
 
@@ -144,14 +145,14 @@ build_source_package() {
     head -1 debian/changelog
 
     # Build source package
-    # Use -sd (source and diff) instead of -sa (source all) if orig.tar.xz exists
     local build_opts="-S -d -k57657DC3657426DA28BC05B99D9EDCF0D2CDF97A"
-    if [ -f "../${PACKAGE}_${VERSION}.orig.tar.xz" ]; then
-        build_opts="$build_opts -sd"
-        print_success "Using existing orig.tar.xz (will not re-upload)"
-    else
+
+    if [ "$include_orig" = "yes" ]; then
         build_opts="$build_opts -sa"
-        print_success "Will include orig.tar.xz in upload"
+        print_success "Including orig.tar.xz in upload (first distribution)"
+    else
+        build_opts="$build_opts -sd"
+        print_success "Using existing orig.tar.xz from PPA (subsequent distribution)"
     fi
 
     print_success "Running debuild..."
@@ -254,9 +255,13 @@ build_all_distributions() {
     # Create orig tarball once for all distributions
     create_orig_tarball
 
+    local first_dist="yes"
     for dist in $SUPPORTED_DISTS; do
         clean_build
-        build_source_package "$dist" "$revision"
+
+        # First distribution includes orig.tar.xz, others reuse it from PPA
+        build_source_package "$dist" "$revision" "$first_dist"
+        first_dist="no"
 
         if [ "$upload" = "yes" ]; then
             upload_to_ppa "$dist" "$revision"
@@ -324,7 +329,7 @@ main() {
     else
         create_orig_tarball
         clean_build
-        build_source_package "$dist" "$revision"
+        build_source_package "$dist" "$revision" "yes"
 
         if [ "$upload" = "yes" ]; then
             upload_to_ppa "$dist" "$revision"
