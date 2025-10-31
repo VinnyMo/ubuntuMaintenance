@@ -16,7 +16,7 @@ set -e
 PACKAGE="ubuntu-maintenance"
 VERSION="2.1.0"
 MAINTAINER_NAME="Vincent T. Mossman"
-MAINTAINER_EMAIL="vinny@example.com"
+MAINTAINER_EMAIL="vinny.mossman@gmail.com"
 
 # Colors for output
 RED='\033[0;31m'

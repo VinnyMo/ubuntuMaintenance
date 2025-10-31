@@ -1,0 +1,161 @@
+.TH UBUNTU-MAINTENANCE 1 "October 2025" "version 2.1.0" "Ubuntu Server Maintenance Tool"
+.SH NAME
+ubuntu-maintenance \- automated Ubuntu/Debian server maintenance and update utility (Rust Edition)
+.SH SYNOPSIS
+.B ubuntu-maintenance
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+.B ubuntu-maintenance
+is a production-ready command-line utility for automated Ubuntu/Debian server maintenance, rewritten in Rust for enhanced memory safety and security. It provides safe, logged, and auditable system updates with multiple operation modes suitable for web servers, database servers, and production environments.
+.PP
+The tool offers three main update strategies: force update (with automatic reboot), all updates (without reboot), and critical security updates only. All operations are logged to /var/log/ubuntu_maintenance.log for audit trails.
+.PP
+The Rust rewrite provides compile-time memory safety guarantees, eliminating entire classes of security vulnerabilities such as buffer overflows, use-after-free, and memory leaks that can affect C programs.
+.SH OPTIONS
+.TP
+.BR \-f ", " \-\-force
+Perform a full system update with automatic reboot scheduled in 5 minutes. This mode runs apt update, apt full-upgrade, apt autoremove, apt autoclean, and schedules a system reboot. The reboot can be cancelled with 'sudo shutdown -c' within the 5-minute window.
+.TP
+.BR \-a ", " \-\-all
+Perform a full system update without automatic reboot. This is the recommended mode for most production servers. Runs apt update, apt full-upgrade, apt autoremove, and apt autoclean. You control when to reboot.
+.TP
+.BR \-c ", " \-\-critical
+Install only critical security updates. This conservative mode runs apt update and apt upgrade (not full-upgrade), installing only security patches. Best for minimal risk and downtime.
+.TP
+.BR \-i ", " \-\-info
+Display comprehensive system information including hostname, kernel version, available updates, security updates, disk usage, uptime, and last reboot time. Does not require sudo privileges.
+.TP
+.BR \-d ", " \-\-dry\-run
+Preview mode that shows what commands would be executed without making any changes to the system. Always use this first in production environments. Must be combined with another option (e.g., -d -a).
+.TP
+.BR \-h ", " \-\-help
+Display help message with usage information and examples.
+.TP
+.BR \-V ", " \-\-version
+Display version information.
+.SH INTERACTIVE MODE
+When run without arguments,
+.B ubuntu-maintenance
+presents an interactive menu with the following options:
+.PP
+.nf
+1) Force Update (with reboot)
+2) All Update (no reboot)
+3) Critical Update (security only)
+4) System Information
+5) Help
+6) Manage Update Schedule
+0) Exit
+.fi
+.PP
+.B Manage Update Schedule
+(option 6) provides an interactive interface to create, view, and remove automated update schedules using cron. Users can set up daily, weekly, or weekday schedules with their choice of update mode (all, critical, or force). This eliminates the need to manually edit crontab files.
+.SH EXIT STATUS
+.TP
+.B 0
+Success
+.TP
+.B 1
+Failure (insufficient privileges, invalid arguments, or system errors)
+.SH FILES
+.TP
+.I /var/log/ubuntu_maintenance.log
+Primary log file for all operations (falls back to /tmp/ubuntu_maintenance.log if primary is unavailable)
+.TP
+.I /usr/bin/ubuntu-maintenance
+Installed binary location
+.SH EXAMPLES
+.TP
+.B sudo ubuntu-maintenance
+Run in interactive mode with menu
+.TP
+.B sudo ubuntu-maintenance \-\-dry\-run \-a
+Preview all updates without applying them (recommended first step)
+.TP
+.B sudo ubuntu-maintenance \-a
+Apply all updates without rebooting (recommended for production)
+.TP
+.B sudo ubuntu-maintenance \-c
+Apply only critical security updates
+.TP
+.B sudo ubuntu-maintenance \-f
+Full update with automatic reboot in 5 minutes
+.TP
+.B ubuntu-maintenance \-i
+View system information (no sudo required)
+.TP
+.B ubuntu-maintenance \-\-version
+Display version information
+.SH CRON AUTOMATION
+For automated weekly updates without reboot:
+.PP
+.nf
+sudo crontab -e
+# Add:
+0 3 * * 0 /usr/bin/ubuntu-maintenance -a >> /var/log/automated_updates.log 2>&1
+.fi
+.PP
+For daily security updates only:
+.PP
+.nf
+0 2 * * * /usr/bin/ubuntu-maintenance -c >> /var/log/security_updates.log 2>&1
+.fi
+.PP
+Alternatively, use the built-in schedule manager (option 6 in interactive mode) to configure cron jobs without manual editing.
+.SH SECURITY
+Version 2.1 Rust Edition provides enhanced security:
+.IP \[bu] 2
+Memory safety guaranteed at compile-time (prevents buffer overflows, use-after-free, etc.)
+.IP \[bu]
+Zero runtime memory leaks
+.IP \[bu]
+Modern error handling with Rust's Result and Option types
+.IP \[bu]
+Input validation on all user input
+.IP \[bu]
+Sudo privilege checking
+.IP \[bu]
+All operations logged for audit trails
+.IP \[bu]
+Safe reboot with 5-minute cancellation window
+.IP \[bu]
+Colored terminal output for better visibility
+.SH RUST ADVANTAGES
+The Rust rewrite provides significant advantages over the original C implementation:
+.IP \[bu] 2
+Compile-time memory safety without runtime overhead
+.IP \[bu]
+Thread-safe by default
+.IP \[bu]
+No undefined behavior
+.IP \[bu]
+Modern package management with cargo
+.IP \[bu]
+Rich type system for better error handling
+.IP \[bu]
+Zero-cost abstractions
+.SH NOTES
+.IP \[bu] 2
+Most operations require sudo/root privileges
+.IP \[bu]
+Reboot delay is 5 minutes (not immediate) for safety
+.IP \[bu]
+Logs include timestamps and exit codes for all commands
+.IP \[bu]
+Dry-run mode is strongly recommended before production use
+.IP \[bu]
+Suitable for web servers hosting accounting and business applications
+.IP \[bu]
+Binary size approximately 1.4MB (statically linked Rust executable)
+.SH BUGS
+Report bugs to the package maintainer or project repository.
+.SH AUTHOR
+Vincent T. Mossman
+.PP
+Original C implementation (2019), Production hardening (2025), Rust rewrite (2025)
+.SH SEE ALSO
+.BR apt (8),
+.BR apt-get (8),
+.BR shutdown (8),
+.BR cron (8),
+.BR cargo (1)

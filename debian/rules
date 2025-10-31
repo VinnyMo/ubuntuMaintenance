@@ -1,5 +1,5 @@
 #!/usr/bin/make -f
-# debian/rules for ubuntu-maintenance
+# debian/rules for ubuntu-maintenance (Rust edition)
 
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
@@ -7,26 +7,27 @@
 # See FEATURE AREAS in dpkg-buildflags(1)
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
-# See ENVIRONMENT in dpkg-buildflags(1)
-# Package maintainers to append CFLAGS
-#export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
-# Package maintainers to append LDFLAGS
-#export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
-
 %:
 	dh $@
 
 override_dh_auto_clean:
 	dh_auto_clean
-	rm -f system_update *.o
-	rm -f system_update.1.gz
+	cargo clean || true
+	rm -f ubuntu-maintenance.1.gz
 
 override_dh_auto_build:
-	dh_auto_build
+	# Build Rust binary
+	cargo build --release
 	# Build man page
-	gzip -9 -c system_update.1 > system_update.1.gz
+	gzip -9 -c ubuntu-maintenance.1 > ubuntu-maintenance.1.gz
 
 override_dh_auto_install:
 	dh_auto_install
+	# Install binary
+	install -D -m 0755 target/release/ubuntu-maintenance debian/ubuntu-maintenance/usr/bin/ubuntu-maintenance
+	# Install man page
+	install -D -m 0644 ubuntu-maintenance.1.gz debian/ubuntu-maintenance/usr/share/man/man1/ubuntu-maintenance.1.gz
+	# Install documentation
+	install -D -m 0644 README.md debian/ubuntu-maintenance/usr/share/doc/ubuntu-maintenance/README.md
 	# Create log directory
 	install -d debian/ubuntu-maintenance/var/log

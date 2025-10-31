@@ -1,10 +1,5 @@
-# Makefile for Ubuntu Server Maintenance Tool
+# Makefile for Ubuntu Server Maintenance Tool (Rust Edition)
 # Author: Vincent T. Mossman
-
-# Compiler and flags
-CC = gcc
-CFLAGS = -Wall -Wextra -O2 -D_FORTIFY_SOURCE=2
-LDFLAGS = -Wl,-z,relro,-z,now
 
 # Installation directories
 PREFIX ?= /usr
@@ -12,28 +7,26 @@ BINDIR = $(PREFIX)/bin
 MANDIR = $(PREFIX)/share/man/man1
 DOCDIR = $(PREFIX)/share/doc/ubuntu-maintenance
 
-# Program name
-PROGRAM = system_update
-SOURCES = system_update.c utility_functions.c
-HEADERS = utility_functions.h
-OBJECTS = $(SOURCES:.c=.o)
+# Program name and paths
+PROGRAM = ubuntu-maintenance
+RUST_BINARY = target/release/$(PROGRAM)
+MANPAGE = ubuntu-maintenance.1
 
 # Version info
 VERSION = 2.1.0
 
-.PHONY: all clean install uninstall man
+.PHONY: all build clean install uninstall man test help
 
-all: $(PROGRAM)
+all: build
 
-$(PROGRAM): $(OBJECTS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
-
-%.o: %.c $(HEADERS)
-	$(CC) $(CFLAGS) -c $< -o $@
+build:
+	@echo "Building Rust binary..."
+	cargo build --release
 
 clean:
-	rm -f $(PROGRAM) $(OBJECTS)
-	rm -f system_update.1.gz
+	@echo "Cleaning build artifacts..."
+	cargo clean
+	rm -f $(MANPAGE).gz
 	rm -rf debian/ubuntu-maintenance
 	rm -rf debian/.debhelper
 	rm -f debian/files
@@ -41,12 +34,13 @@ clean:
 	rm -f debian/*.substvars
 	rm -f debian/debhelper-build-stamp
 
-install: $(PROGRAM) man
+install: build man
+	@echo "Installing $(PROGRAM)..."
 	# Install binary
-	install -D -m 0755 $(PROGRAM) $(DESTDIR)$(BINDIR)/$(PROGRAM)
+	install -D -m 0755 $(RUST_BINARY) $(DESTDIR)$(BINDIR)/$(PROGRAM)
 
 	# Install man page
-	install -D -m 0644 system_update.1.gz $(DESTDIR)$(MANDIR)/system_update.1.gz
+	install -D -m 0644 $(MANPAGE).gz $(DESTDIR)$(MANDIR)/$(PROGRAM).1.gz
 
 	# Install documentation
 	install -D -m 0644 README.md $(DESTDIR)$(DOCDIR)/README.md
@@ -55,37 +49,49 @@ install: $(PROGRAM) man
 	install -d -m 0755 $(DESTDIR)/var/log
 
 uninstall:
+	@echo "Uninstalling $(PROGRAM)..."
 	rm -f $(DESTDIR)$(BINDIR)/$(PROGRAM)
-	rm -f $(DESTDIR)$(MANDIR)/system_update.1.gz
+	rm -f $(DESTDIR)$(MANDIR)/$(PROGRAM).1.gz
 	rm -rf $(DESTDIR)$(DOCDIR)
 
-man: system_update.1.gz
+man: $(MANPAGE).gz
 
-system_update.1.gz: system_update.1
-	gzip -9 -c system_update.1 > system_update.1.gz
+$(MANPAGE).gz: $(MANPAGE)
+	gzip -9 -c $(MANPAGE) > $(MANPAGE).gz
 
 # Development targets
-test: $(PROGRAM)
-	@echo "Running dry-run test..."
-	./$(PROGRAM) --help
+test: build
+	@echo "Running tests..."
+	@echo ""
+	@echo "Testing help command:"
+	./$(RUST_BINARY) --help
+	@echo ""
+	@echo "Testing version command:"
+	./$(RUST_BINARY) --version
 
 format:
-	@echo "Code formatting (if clang-format is available)"
-	@command -v clang-format >/dev/null 2>&1 && \
-		clang-format -i $(SOURCES) $(HEADERS) || \
-		echo "clang-format not found, skipping"
+	@echo "Formatting Rust code..."
+	cargo fmt
+
+check:
+	@echo "Running Rust checks..."
+	cargo check
+	cargo clippy
 
 .SILENT: help
 help:
-	@echo "Ubuntu Server Maintenance Tool - Makefile"
+	@echo "Ubuntu Server Maintenance Tool - Makefile (Rust Edition)"
 	@echo ""
 	@echo "Targets:"
 	@echo "  all        - Build the program (default)"
+	@echo "  build      - Build Rust binary with cargo"
 	@echo "  clean      - Remove built files"
 	@echo "  install    - Install to system (requires root)"
 	@echo "  uninstall  - Remove from system (requires root)"
 	@echo "  man        - Generate compressed man page"
 	@echo "  test       - Run basic tests"
+	@echo "  format     - Format Rust code"
+	@echo "  check      - Run Rust checks and lints"
 	@echo "  help       - Show this help message"
 	@echo ""
 	@echo "Installation directories:"
@@ -98,3 +104,4 @@ help:
 	@echo "  make                    # Build the program"
 	@echo "  sudo make install       # Install system-wide"
 	@echo "  make PREFIX=/usr/local  # Use different prefix"
+	@echo "  make test               # Run tests"

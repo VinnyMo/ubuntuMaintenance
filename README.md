@@ -41,11 +41,25 @@ A production-ready command-line utility for automated Ubuntu/Debian server maint
 The easiest way to install on Ubuntu:
 
 ```bash
-# Add the PPA (replace YOUR_USERNAME with the actual PPA username)
-sudo add-apt-repository ppa:YOUR_USERNAME/ubuntu-maintenance
+# Add the PPA
+sudo add-apt-repository ppa:vinny-mossman/ubuntumaintenance
+
+# Update package lists
 sudo apt update
 
 # Install the package
+sudo apt install ubuntu-maintenance
+```
+
+**If you get a GPG key error**, import the signing key first:
+
+```bash
+# Import the PPA signing key
+sudo gpg --keyserver keyserver.ubuntu.com --recv-keys 7D382EA0DFF37F99
+sudo gpg --export 7D382EA0DFF37F99 | sudo apt-key add -
+
+# Then update and install
+sudo apt update
 sudo apt install ubuntu-maintenance
 ```
 
@@ -86,12 +100,6 @@ sudo chmod +x system_update
 sudo cp system_update /usr/local/bin/
 sudo chown root:root /usr/local/bin/system_update
 ```
-
-### Option 3: Create Your Own PPA
-
-Want to distribute this yourself? See:
-- **Quick Start**: [QUICKSTART_PPA.md](QUICKSTART_PPA.md) - Get started in 30 minutes
-- **Detailed Guide**: [PPA_GUIDE.md](PPA_GUIDE.md) - Complete PPA distribution guide
 
 ## Usage
 

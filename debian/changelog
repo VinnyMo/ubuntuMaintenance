@@ -1,3 +1,26 @@
+ubuntu-maintenance (3.0.0-1~noble1) noble; urgency=medium
+
+  * MAJOR UPDATE: Complete Rust rewrite
+  * Compile-time memory safety guarantees (no buffer overflows, use-after-free)
+  * Zero runtime memory leaks guaranteed by Rust's ownership system
+  * Modern error handling with Result and Option types
+  * Binary renamed from system_update to ubuntu-maintenance
+  * Log file renamed to /var/log/ubuntu_maintenance.log
+  * Colored terminal output for better visibility
+  * Modern CLI parsing with clap library
+  * All functionality from v2.1.0 maintained
+  * Enhanced security through Rust's type system
+  * ~1.4MB single binary with no runtime dependencies
+  * Improved code maintainability and reliability
+
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Fri, 31 Oct 2025 13:15:00 -0400
+
+ubuntu-maintenance (2.1.0-1~noble1) noble; urgency=medium
+
+  * Build for Ubuntu 24.04 (Noble)
+
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Fri, 31 Oct 2025 00:54:01 -0400
+
 ubuntu-maintenance (2.1.0-1) jammy; urgency=medium
 
   * NEW FEATURE: Automated Update Schedule Management
@@ -12,7 +35,7 @@ ubuntu-maintenance (2.1.0-1) jammy; urgency=medium
   * Warning prompts for potentially dangerous configurations
   * No more manual crontab editing required
 
- -- Vincent T. Mossman <vinny@example.com>  Mon, 28 Oct 2025 06:00:00 +0000
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Mon, 28 Oct 2025 06:00:00 +0000
 
 ubuntu-maintenance (2.0.0-1) jammy; urgency=medium
 
@@ -43,7 +66,7 @@ ubuntu-maintenance (2.0.0-1) jammy; urgency=medium
   * Added apt autoclean to all update modes
   * Comprehensive documentation and man pages
 
- -- Vincent T. Mossman <vinny@example.com>  Mon, 28 Oct 2025 04:00:00 +0000
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Mon, 28 Oct 2025 04:00:00 +0000
 
 ubuntu-maintenance (1.0.0-1) jammy; urgency=low
 
@@ -52,4 +75,4 @@ ubuntu-maintenance (1.0.0-1) jammy; urgency=low
   * Interactive menu system
   * Three update modes: force, all, critical
 
- -- Vincent T. Mossman <vinny@example.com>  Thu, 04 Jul 2019 12:00:00 +0000
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Thu, 04 Jul 2019 12:00:00 +0000

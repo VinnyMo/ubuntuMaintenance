@@ -1,10 +1,10 @@
 Source: ubuntu-maintenance
 Section: admin
 Priority: optional
-Maintainer: Vincent T. Mossman <vinny@example.com>
+Maintainer: Vincent T. Mossman <vinny.mossman@gmail.com>
 Build-Depends: debhelper-compat (= 13),
-               gcc,
-               libc6-dev
+               cargo,
+               rustc (>= 1.70)
 Standards-Version: 4.6.0
 Homepage: https://github.com/VinnyMo/ubuntuMaintenance
 Vcs-Browser: https://github.com/VinnyMo/ubuntuMaintenance
@@ -18,18 +18,23 @@ Depends: ${shlibs:Depends},
          apt (>= 1.0)
 Recommends: cron | systemd
 Suggests: unattended-upgrades
-Description: automated Ubuntu/Debian server maintenance tool
+Description: automated Ubuntu/Debian server maintenance tool (Rust edition)
  A production-ready command-line utility for automated Ubuntu/Debian
- server maintenance. Provides safe, logged, and auditable system updates
- with multiple operation modes.
+ server maintenance, rewritten in Rust for enhanced memory safety and
+ security. Provides safe, logged, and auditable system updates with
+ multiple operation modes.
  .
  Features:
   * Multiple update modes: force (with reboot), all (no reboot), critical only
+  * Automated schedule management with interactive cron setup
   * Dry-run mode for safe preview before applying changes
-  * Comprehensive logging to /var/log/system_update.log
+  * Comprehensive logging to /var/log/ubuntu_maintenance.log
   * Safe reboots with 5-minute cancellation window
   * Interactive menu and command-line interface
+  * Colored terminal output for better visibility
   * Suitable for web servers, databases, and production environments
  .
- Security hardening includes: memory leak fixes, buffer overflow protection,
- input validation, comprehensive error handling, and audit logging.
+ The Rust rewrite provides compile-time memory safety guarantees,
+ eliminating entire classes of security vulnerabilities such as buffer
+ overflows, use-after-free, and memory leaks. Zero runtime overhead with
+ modern error handling using Result and Option types.

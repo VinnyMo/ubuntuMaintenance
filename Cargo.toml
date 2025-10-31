@@ -1,0 +1,18 @@
+[package]
+name = "ubuntu-maintenance"
+version = "3.0.0"
+edition = "2021"
+authors = ["Vincent T. Mossman"]
+description = "Production-ready command-line utility for automated Ubuntu/Debian server maintenance (Rust edition)"
+license = "MIT"
+
+[[bin]]
+name = "ubuntu-maintenance"
+path = "src/main.rs"
+
+[dependencies]
+colored = "2.1"
+chrono = "0.4"
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+nix = { version = "0.29", features = ["user"] }

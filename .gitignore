@@ -1,7 +1,12 @@
-# Build artifacts
+# C Build artifacts
 *.o
 system_update
 system_update.1.gz
+
+# Rust Build artifacts
+/target
+ubuntu-maintenance.1.gz
+Cargo.lock
 
 # Debian packaging artifacts
 debian/ubuntu-maintenance/
