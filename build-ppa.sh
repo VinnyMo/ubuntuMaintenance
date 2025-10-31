@@ -14,7 +14,7 @@ set -e
 
 # Configuration
 PACKAGE="ubuntu-maintenance"
-VERSION="3.1.3"
+VERSION="3.1.4"
 MAINTAINER_NAME="Vincent T. Mossman"
 MAINTAINER_EMAIL="vinny.mossman@gmail.com"
 
@@ -25,9 +25,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Supported distributions (focal removed - rustc 1.41 too old for edition 2021)
-SUPPORTED_DISTS="jammy noble"
-DEFAULT_DIST="jammy"
+# Supported distributions (only Noble - requires rustc 1.70+ for clap 4.x)
+SUPPORTED_DISTS="noble"
+DEFAULT_DIST="noble"
 
 # Functions
 print_header() {
@@ -227,16 +227,15 @@ Options:
     -a, --all           Build for all supported distributions
 
 Distributions:
-    jammy               Ubuntu 22.04 LTS (Jammy Jellyfish) [default]
-    noble               Ubuntu 24.04 LTS (Noble Numbat)
+    noble               Ubuntu 24.04 LTS (Noble Numbat) [default]
 
-Note: Ubuntu 20.04 (Focal) is not supported due to rustc 1.41 being too old for Rust edition 2021 (requires 1.56+)
+Note: Only Ubuntu 24.04 (Noble) is supported. Earlier versions lack rustc 1.70+ required by clap 4.x dependency.
 
 Examples:
-    $0                  # Build for jammy (default)
+    $0                  # Build for noble (default and only supported)
     $0 noble            # Build for noble
-    $0 --all            # Build for all distributions (jammy, noble)
-    $0 -n jammy         # Build for jammy, don't upload
+    $0 --all            # Build for all distributions (noble only)
+    $0 -n noble         # Build for noble, don't upload
 
 Environment Variables:
     MAINTAINER_EMAIL    Override maintainer email (default: $MAINTAINER_EMAIL)

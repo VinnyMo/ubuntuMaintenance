@@ -13,7 +13,7 @@ RUST_BINARY = target/release/$(PROGRAM)
 MANPAGE = ubuntu-maintenance.1
 
 # Version info
-VERSION = 3.1.3
+VERSION = 3.1.4
 
 .PHONY: all build clean install uninstall man test help
 
