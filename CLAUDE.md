@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Ubuntu Maintenance Tool - A production-ready CLI utility for automated Ubuntu/Debian server maintenance, rewritten in Rust for memory safety and security. Provides safe, logged, and auditable system updates with multiple operation modes.
 
-**Current Version:** 3.1.6 (Rust Edition)
+**Current Version:** 3.1.7 (Rust Edition)
 **Target Platform:** Ubuntu 24.04 (Noble) only
 **Distribution:** Launchpad PPA at `ppa:vinny-mossman/ubuntumaintenance`
 
@@ -262,6 +262,8 @@ ubuntu-maintenance  # Shows log path in header
 [Fri Oct 31 19:45:00 2025] CMD: apt update
 [Fri Oct 31 19:45:32 2025] === ALL UPDATE completed ===
 ```
+
+**Important:** The log file is `/var/log/ubuntu_maintenance.log` (underscores, not hyphens). The postinst script creates this file automatically on installation.
 
 ## Production Deployment
 
