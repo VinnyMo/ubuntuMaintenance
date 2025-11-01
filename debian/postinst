@@ -6,16 +6,16 @@ set -e
 case "$1" in
     configure)
         # Create log file with proper permissions
-        if [ ! -f /var/log/system_update.log ]; then
-            touch /var/log/system_update.log
-            chmod 640 /var/log/system_update.log
-            chown root:root /var/log/system_update.log
+        if [ ! -f /var/log/ubuntu_maintenance.log ]; then
+            touch /var/log/ubuntu_maintenance.log
+            chmod 640 /var/log/ubuntu_maintenance.log
+            chown root:root /var/log/ubuntu_maintenance.log
         fi
 
         # Add logrotate configuration if logrotate is installed
         if [ -d /etc/logrotate.d ]; then
             cat > /etc/logrotate.d/ubuntu-maintenance <<'EOF'
-/var/log/system_update.log {
+/var/log/ubuntu_maintenance.log {
     weekly
     rotate 12
     compress
@@ -30,12 +30,12 @@ EOF
         echo ""
         echo "Ubuntu Maintenance Tool installed successfully!"
         echo ""
-        echo "Usage: sudo system_update [options]"
+        echo "Usage: sudo ubuntu-maintenance [options]"
         echo ""
-        echo "Run 'man system_update' for detailed documentation"
-        echo "or 'system_update --help' for quick reference"
+        echo "Run 'man ubuntu-maintenance' for detailed documentation"
+        echo "or 'ubuntu-maintenance --help' for quick reference"
         echo ""
-        echo "Logs are written to: /var/log/system_update.log"
+        echo "Logs are written to: /var/log/ubuntu_maintenance.log"
         echo ""
     ;;
 

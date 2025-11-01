@@ -6,8 +6,8 @@ set -e
 case "$1" in
     purge)
         # Remove log file on purge
-        rm -f /var/log/system_update.log
-        rm -f /var/log/system_update.log.*.gz
+        rm -f /var/log/ubuntu_maintenance.log
+        rm -f /var/log/ubuntu_maintenance.log.*.gz
 
         # Remove logrotate configuration
         rm -f /etc/logrotate.d/ubuntu-maintenance

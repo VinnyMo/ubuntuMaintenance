@@ -1,3 +1,11 @@
+ubuntu-maintenance (3.1.7-1~noble1) noble; urgency=medium
+
+  * PACKAGING: Fixed postinst/postrm scripts to use correct binary name
+  * PACKAGING: Updated log file name from system_update.log to ubuntu_maintenance.log
+  * PACKAGING: Corrected installation messages to reference ubuntu-maintenance
+
+ -- Vincent T. Mossman <vincent.mossman@gmail.com>  Sat, 01 Nov 2025 00:30:00 +0000
+
 ubuntu-maintenance (3.1.6-1~noble1) noble; urgency=medium
 
   * PACKAGING: Vendored all Rust dependencies for offline Launchpad builds

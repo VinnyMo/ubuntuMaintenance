@@ -14,7 +14,7 @@ set -e
 
 # Configuration
 PACKAGE="ubuntu-maintenance"
-VERSION="3.1.6"
+VERSION="3.1.7"
 MAINTAINER_NAME="Vincent T. Mossman"
 MAINTAINER_EMAIL="vinny.mossman@gmail.com"
 
