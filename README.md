@@ -3,36 +3,28 @@
 A production-ready command-line utility for automated Ubuntu/Debian server maintenance. Designed for safe, logged, and auditable system updates with multiple operation modes.
 
 **Author:** Vincent T. Mossman
-**Version:** 2.1 (Schedule Management)
+**Version:** 3.1.7 (Rust Edition)
 **License:** MIT
+**Platform:** Ubuntu 24.04 (Noble) only
 
 ## Features
 
 ### Core Functionality
 - **Multiple Update Modes**: Force (with reboot), All (no reboot), Critical (security only)
-- **Automated Schedule Management** ⭐ NEW: Set up cron jobs without editing crontab
+- **Automated Schedule Management**: Set up cron jobs for automated updates
 - **Dry-Run Mode**: Preview changes before applying them
 - **System Information**: View comprehensive system and package status
-- **Automatic Logging**: All operations logged to `/var/log/system_update.log`
-- **Safe Reboots**: 5-minute delay with cancellation option
+- **Automatic Logging**: All operations logged to `/var/log/ubuntu_maintenance.log`
+- **Safe Reboots**: 5-minute delay with interactive cancellation
 - **Interactive & CLI Modes**: Use interactively or script with command-line options
 
-### Schedule Management (v2.1) ⭐ NEW
-- **Easy Cron Setup**: No need to manually edit crontab
-- **Multiple Frequencies**: Daily, weekly, or weekdays
-- **Flexible Modes**: Choose all updates, critical only, or force with reboot
-- **View Schedules**: See all configured update schedules in human-readable format
-- **Remove Schedules**: Safely remove automated updates with confirmation
-- **Automatic Logging**: Scheduled updates log to `/var/log/automated_updates.log`
-
-### Security Improvements (v2.0)
-- ✅ All memory leaks fixed
-- ✅ Buffer overflow protection
-- ✅ Input validation on all user input
-- ✅ Comprehensive error handling
-- ✅ Sudo privilege checking
-- ✅ Command execution logging
-- ✅ Safe string operations throughout
+### Rust Edition Benefits (v3.x)
+- ✅ **Memory Safety**: Compile-time guarantees, no leaks or buffer overflows
+- ✅ **Modern CLI**: Type-safe argument parsing with `clap`
+- ✅ **Cross-Platform Terminal**: Interactive features with `crossterm`
+- ✅ **Robust Error Handling**: `Result` and `anyhow` for comprehensive error handling
+- ✅ **Zero Runtime Overhead**: Performance equivalent to C with better safety
+- ✅ **Production Ready**: Extensively tested on Ubuntu 24.04 (Noble)
 
 ## Installation
 
@@ -72,33 +64,42 @@ sudo apt install ubuntu-maintenance
 ### Option 2: Build from Source
 
 #### Prerequisites
-- Ubuntu 18.04 LTS or later (or Debian-based distribution)
-- GCC compiler
+- **Ubuntu 24.04 (Noble) only** - Earlier versions not supported
+- Rust toolchain 1.70+ (Noble's default rustc)
+- Cargo build system
 - Root/sudo privileges for system updates
+
+**Why Noble only?** The Rust edition uses `clap 4.5` which requires Rust 1.70+. Only Ubuntu 24.04 ships with this version by default.
 
 #### Using Make (Recommended)
 
 ```bash
-cd /home/user/ubuntuMaintenance
+cd ubuntuMaintenance
 make
 sudo make install
 ```
 
-This installs to `/usr/bin/system_update` with man pages.
+This installs:
+- Binary to `/usr/bin/ubuntu-maintenance`
+- Man page to `/usr/share/man/man1/ubuntu-maintenance.1.gz`
+- Creates log file at `/var/log/ubuntu_maintenance.log`
 
 #### Manual Compilation
 
 ```bash
-cd /home/user/ubuntuMaintenance
-gcc -Wall -Wextra -o system_update system_update.c utility_functions.c
-sudo chmod +x system_update
+cd ubuntuMaintenance
+cargo build --release
+sudo cp target/release/ubuntu-maintenance /usr/local/bin/
+sudo chmod 755 /usr/local/bin/ubuntu-maintenance
 ```
 
-#### Optional: Install System-Wide
+#### Development Build
 
 ```bash
-sudo cp system_update /usr/local/bin/
-sudo chown root:root /usr/local/bin/system_update
+cargo build          # Debug build
+cargo build --release # Optimized build
+cargo fmt            # Format code
+cargo clippy         # Run linter
 ```
 
 ## Usage
@@ -108,21 +109,23 @@ sudo chown root:root /usr/local/bin/system_update
 Run without arguments for an interactive menu:
 
 ```bash
-sudo ./system_update
+sudo ubuntu-maintenance
 ```
 
 You'll see:
 ```
-=== UBUNTU SERVER MAINTENANCE TOOL ===
+=== UBUNTU MAINTENANCE TOOL ===
+Log file: /var/log/ubuntu_maintenance.log
 
 1) Force Update (with reboot)
 2) All Update (no reboot)
 3) Critical Update (security only)
 4) System Information
-5) Help
+5) Schedule Management
+6) Help
 0) Exit
 
-Enter choice (0-5):
+Enter choice (0-6):
 ```
 
 ### Command-Line Mode
@@ -143,28 +146,28 @@ Enter choice (0-5):
 **Recommended for Production Servers:**
 ```bash
 # Preview updates first (safe, read-only)
-sudo ./system_update --dry-run -a
+sudo ubuntu-maintenance --dry-run -a
 
 # Apply all updates without rebooting
-sudo ./system_update --all
+sudo ubuntu-maintenance --all
 
 # Critical security updates only
-sudo ./system_update --critical
+sudo ubuntu-maintenance --critical
 ```
 
 **For Maintenance Windows:**
 ```bash
 # Full update with scheduled reboot
-sudo ./system_update --force
+sudo ubuntu-maintenance --force
 
 # Preview force update first
-sudo ./system_update --dry-run -f
+sudo ubuntu-maintenance --dry-run -f
 ```
 
 **System Monitoring:**
 ```bash
-# View system status (no sudo required)
-./system_update --info
+# View system status (requires sudo)
+sudo ubuntu-maintenance --info
 ```
 
 ## Update Modes Explained
@@ -215,12 +218,12 @@ sudo ./system_update --dry-run -f
 **Example workflow:**
 ```bash
 # 1. Preview the changes
-sudo ./system_update --dry-run -a
+sudo ubuntu-maintenance --dry-run -a
 
 # 2. Review the output
 
 # 3. If acceptable, run for real
-sudo ./system_update -a
+sudo ubuntu-maintenance -a
 ```
 
 ## Production Deployment
@@ -229,14 +232,17 @@ sudo ./system_update -a
 
 #### 1. Initial Installation
 ```bash
-# Compile with all warnings enabled
-gcc -Wall -Wextra -o system_update system_update.c utility_functions.c
+# Build optimized release binary
+cargo build --release
 
 # Test in dry-run mode first
-sudo ./system_update --dry-run -a
+sudo ./target/release/ubuntu-maintenance --dry-run -a
 
 # Run actual updates
-sudo ./system_update -a
+sudo ./target/release/ubuntu-maintenance -a
+
+# Install system-wide
+sudo make install
 ```
 
 #### 2. Automated Updates (Cron)
@@ -250,36 +256,36 @@ sudo crontab -e
 Add:
 ```cron
 # Run updates every Sunday at 3 AM
-0 3 * * 0 /usr/local/bin/system_update -a >> /var/log/automated_updates.log 2>&1
+0 3 * * 0 /usr/bin/ubuntu-maintenance -a >> /var/log/automated_updates.log 2>&1
 ```
 
 For **automated security updates only**:
 ```cron
 # Run security updates daily at 2 AM
-0 2 * * * /usr/local/bin/system_update -c >> /var/log/security_updates.log 2>&1
+0 2 * * * /usr/bin/ubuntu-maintenance -c >> /var/log/security_updates.log 2>&1
 ```
 
 **Important:** Only use `-f` (force with reboot) in cron if you have redundancy/load balancing!
 
 #### 3. Systemd Timer (Alternative to Cron)
 
-Create `/etc/systemd/system/system-update.service`:
+Create `/etc/systemd/system/ubuntu-maintenance.service`:
 ```ini
 [Unit]
-Description=Ubuntu System Update
+Description=Ubuntu Maintenance Tool
 After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/system_update -a
+ExecStart=/usr/bin/ubuntu-maintenance -a
 StandardOutput=journal
 StandardError=journal
 ```
 
-Create `/etc/systemd/system/system-update.timer`:
+Create `/etc/systemd/system/ubuntu-maintenance.timer`:
 ```ini
 [Unit]
-Description=Weekly System Update Timer
+Description=Weekly Ubuntu Maintenance Timer
 
 [Timer]
 OnCalendar=Sun 03:00
@@ -291,31 +297,31 @@ WantedBy=timers.target
 
 Enable:
 ```bash
-sudo systemctl enable system-update.timer
-sudo systemctl start system-update.timer
+sudo systemctl enable ubuntu-maintenance.timer
+sudo systemctl start ubuntu-maintenance.timer
 ```
 
 ### Logging
 
-All operations are logged to `/var/log/system_update.log` with timestamps.
+All operations are logged to `/var/log/ubuntu_maintenance.log` with timestamps.
 
 **View recent activity:**
 ```bash
-sudo tail -f /var/log/system_update.log
+sudo tail -f /var/log/ubuntu_maintenance.log
 ```
 
 **Log format:**
 ```
-[Mon Oct 28 04:44:15 2025] === System Update Tool Started ===
-[Mon Oct 28 04:44:15 2025] CMD: sudo apt update
-[Mon Oct 28 04:45:32 2025] === ALL UPDATE completed ===
+[Fri Oct 31 19:45:00 2025] === Ubuntu Maintenance Tool Started ===
+[Fri Oct 31 19:45:00 2025] CMD: apt update
+[Fri Oct 31 19:45:32 2025] === ALL UPDATE completed ===
 ```
 
 **Log rotation** (recommended):
 
-Create `/etc/logrotate.d/system-update`:
+Create `/etc/logrotate.d/ubuntu-maintenance`:
 ```
-/var/log/system_update.log {
+/var/log/ubuntu_maintenance.log {
     weekly
     rotate 12
     compress
@@ -331,12 +337,12 @@ Create `/etc/logrotate.d/system-update`:
 
 1. **Always preview first:**
    ```bash
-   sudo ./system_update --dry-run -a
+   sudo ubuntu-maintenance --dry-run -a
    ```
 
 2. **Use the `-a` (all) mode** to control reboot timing:
    ```bash
-   sudo ./system_update -a
+   sudo ubuntu-maintenance -a
    ```
 
 3. **Schedule reboots during low-traffic periods:**
@@ -349,13 +355,13 @@ Create `/etc/logrotate.d/system-update`:
 
 1. **Use `-c` (critical) for minimal risk:**
    ```bash
-   sudo ./system_update -c
+   sudo ubuntu-maintenance -c
    ```
 
 2. **Schedule full updates during maintenance windows:**
    ```bash
    # During scheduled maintenance
-   sudo ./system_update -a
+   sudo ubuntu-maintenance -a
    ```
 
 3. **Never use `-f` (force with reboot)** without backups and redundancy.
@@ -370,23 +376,23 @@ Since this server hosts accounting applications, follow these guidelines:
    sudo ./backup_script.sh
 
    # Then update
-   sudo ./system_update -a
+   sudo ubuntu-maintenance -a
    ```
 
 2. **Test in dry-run mode:**
    ```bash
-   sudo ./system_update --dry-run -a
+   sudo ubuntu-maintenance --dry-run -a
    ```
 
 3. **Schedule during off-hours** (weekends, late night):
    ```bash
    # Use cron for automated weekend updates
-   0 2 * * 6 /usr/local/bin/system_update -a
+   0 2 * * 6 /usr/bin/ubuntu-maintenance -a
    ```
 
 4. **Monitor logs after updates:**
    ```bash
-   sudo tail -f /var/log/system_update.log
+   sudo tail -f /var/log/ubuntu_maintenance.log
    ```
 
 ## Troubleshooting
@@ -397,7 +403,7 @@ ERROR: This program must be run with sudo privileges.
 ```
 **Solution:** Run with `sudo`:
 ```bash
-sudo ./system_update -a
+sudo ubuntu-maintenance -a
 ```
 
 ### Cannot Open Log File
@@ -405,10 +411,10 @@ If you see warnings about log files:
 ```
 WARNING: Cannot open log file
 ```
-**Solution:** The tool falls back to `/tmp/system_update.log`. To fix permanently:
+**Solution:** The tool falls back to `/tmp/ubuntu_maintenance.log`. To fix permanently:
 ```bash
-sudo touch /var/log/system_update.log
-sudo chmod 640 /var/log/system_update.log
+sudo touch /var/log/ubuntu_maintenance.log
+sudo chmod 640 /var/log/ubuntu_maintenance.log
 ```
 
 ### APT Lock Issues
@@ -418,7 +424,7 @@ If updates fail due to another process using apt:
 sudo lsof /var/lib/dpkg/lock-frontend
 
 # Wait for other process to finish, then retry
-sudo ./system_update -a
+sudo ubuntu-maintenance -a
 ```
 
 ### Cancel Scheduled Reboot
@@ -431,7 +437,7 @@ sudo shutdown -c
 
 ### Check for Available Updates
 ```bash
-./system_update -i
+sudo ubuntu-maintenance -i
 ```
 
 Shows:
@@ -446,58 +452,86 @@ Shows:
 Modify cron to send email on completion:
 ```cron
 MAILTO=admin@yourdomain.com
-0 3 * * 0 /usr/local/bin/system_update -a
+0 3 * * 0 /usr/bin/ubuntu-maintenance -a
 ```
 
 ## Security Considerations
 
-### What's Been Fixed in v2.0
+### Rust Edition Benefits (v3.x)
 
-1. **Memory Management:** All malloc() calls now have corresponding free() calls
-2. **Buffer Overflows:** Replaced strcpy() with bounds-checked alternatives
-3. **Input Validation:** All user input validated before processing
-4. **Error Handling:** Comprehensive error checking on all system operations
-5. **Code Quality:** Reduced from 405 lines to more maintainable, secure code
-6. **Logging:** All operations logged for audit trails
+1. **Memory Safety:** Compile-time guarantees eliminate memory leaks and buffer overflows
+2. **Type Safety:** Strong typing prevents entire classes of bugs
+3. **Modern Error Handling:** `Result` type forces explicit error handling
+4. **No Undefined Behavior:** Rust's borrow checker prevents data races and null pointer dereferences
+5. **Safe Concurrency:** Ownership system ensures thread safety
+6. **Auditable:** All system commands logged for compliance
 
 ### Safe Defaults
 
-- Reboot delay: 5 minutes (not immediate)
+- Reboot delay: 5 minutes with interactive cancellation
 - Dry-run mode available for preview
 - Sudo checking prevents accidental non-root execution
-- All system commands logged
+- All system commands logged to `/var/log/ubuntu_maintenance.log`
 - Error conditions reported and logged
+- Input validation on all user interactions
 
-## Comparison with Original
+## Version History
 
-| Feature | Original (2019) | Production v2.0 |
-|---------|-----------------|-----------------|
-| Memory leaks | 6 leaks | ✅ 0 leaks |
-| Buffer overflows | Vulnerable | ✅ Protected |
-| Input validation | None | ✅ Full validation |
-| Error handling | None | ✅ Comprehensive |
-| Logging | None | ✅ Full audit trail |
-| Dry-run mode | No | ✅ Yes |
-| Help system | Incomplete | ✅ Complete |
-| Information page | Under construction | ✅ Implemented |
-| Reboot safety | Immediate | ✅ 5-min delay |
-| Code efficiency | 200+ line function | ✅ 1 line |
+| Feature | Original C (2019) | C v2.0 (2025) | Rust v3.x (2025) |
+|---------|-------------------|---------------|------------------|
+| Memory safety | ❌ 6 leaks | ✅ Fixed | ✅ Compile-time guaranteed |
+| Buffer overflows | ❌ Vulnerable | ✅ Protected | ✅ Impossible by design |
+| Input validation | ❌ None | ✅ Basic | ✅ Type-safe |
+| Error handling | ❌ None | ✅ C-style | ✅ Result types |
+| Logging | ❌ None | ✅ Basic | ✅ Structured |
+| Dry-run mode | ❌ No | ✅ Yes | ✅ Yes |
+| Interactive menu | ✅ Basic | ✅ Basic | ✅ Raw terminal mode |
+| Schedule management | ❌ No | ✅ Added | ✅ Improved |
+| Reboot safety | ❌ Immediate | ✅ 5-min delay | ✅ Interactive countdown |
+| Platform support | Multiple | Multiple | Noble only (Rust 1.70+) |
 
 ## Support
 
+### Resources
+- **PPA:** `ppa:vinny-mossman/ubuntumaintenance`
+- **GitHub:** https://github.com/VinnyMo/ubuntuMaintenance
+- **Launchpad:** https://launchpad.net/~vinny-mossman/+archive/ubuntu/ubuntumaintenance
+
 ### Logs Location
-- Primary: `/var/log/system_update.log`
-- Fallback: `/tmp/system_update.log`
+- Primary: `/var/log/ubuntu_maintenance.log`
+- Fallback: `/tmp/ubuntu_maintenance.log`
+- Automated updates: `/var/log/automated_updates.log` (if using cron)
 
 ### Bug Reports
-Check logs and file issues with:
-- Log excerpts
+File issues on GitHub with:
+- Log excerpts from `/var/log/ubuntu_maintenance.log`
 - Command used
+- Ubuntu version (`lsb_release -a`)
 - Expected vs. actual behavior
 
 ## Changelog
 
-### Version 2.0 (2025-10-28)
+### Version 3.1.7 (2025-10-31) - Rust Edition
+- Fix postinst/postrm scripts for proper log file handling
+- Vendor all Rust dependencies for offline Launchpad builds
+- Improved PPA build process with Cargo.lock v3 compatibility
+
+### Version 3.1.0 (2025-10-29) - Rust Rewrite
+- **Complete rewrite in Rust** for memory safety and security
+- Compile-time memory safety guarantees (no leaks, no buffer overflows)
+- Type-safe CLI parsing with `clap 4.5`
+- Interactive terminal features with `crossterm`
+- Robust error handling with `Result` and `anyhow`
+- Target platform: Ubuntu 24.04 (Noble) only
+- Binary renamed: `ubuntu-maintenance` (was `system_update`)
+- Log file: `/var/log/ubuntu_maintenance.log` (was `system_update.log`)
+
+### Version 2.1 (2025-10-28) - C Edition
+- Added schedule management features
+- Cron job automation support
+- View and remove schedules
+
+### Version 2.0 (2025-10-28) - C Edition
 - Complete security hardening
 - Fixed all memory leaks
 - Added buffer overflow protection
@@ -505,23 +539,22 @@ Check logs and file issues with:
 - Added comprehensive logging
 - Implemented system information page
 - Added safe reboot with 5-minute delay
-- Full input validation
-- Error handling throughout
-- Proper header file structure
-- Command-line option parsing
-- Production-ready features
 
-### Version 1.0 (2019-07-04)
+### Version 1.0 (2019-07-04) - Original C
 - Initial release
 - Basic update functionality
 - Interactive menu
 
 ## License
 
-Open source - use and modify as needed. Attribution appreciated.
+MIT License - Open source, use and modify as needed. Attribution appreciated.
 
 ---
 
-**Maintained by:** Vincent T. Mossman
-**Production Hardening:** 2025
-**For:** Web servers hosting accounting applications and personal projects
+**Author:** Vincent T. Mossman
+**Repository:** https://github.com/VinnyMo/ubuntuMaintenance
+**PPA:** ppa:vinny-mossman/ubuntumaintenance
+**Platform:** Ubuntu 24.04 (Noble)
+**Language:** Rust (2025 rewrite from C)
+
+**Production Ready:** Deployed on web servers hosting accounting applications, Node.js services, and personal projects.
