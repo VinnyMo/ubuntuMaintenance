@@ -109,6 +109,7 @@ fn main_menu() {
         "Run Updates...",
         "Manage Update Schedule...",
         "System Information",
+        "View Logs",
         "Help",
         "", // Blank line
         "Exit",
@@ -177,7 +178,7 @@ fn main_menu() {
                         break Some(selected);
                     }
                     KeyCode::Char('q') | KeyCode::Esc => {
-                        break Some(5); // Exit option (last item)
+                        break Some(6); // Exit option (last item)
                     }
                     _ => {}
                 }
@@ -202,11 +203,14 @@ fn main_menu() {
                     let _ = get_input();
                 }
                 3 => {
+                    view_verbose_logs();
+                }
+                4 => {
                     show_help();
                     tell_user("Press Enter to return to menu...");
                     let _ = get_input();
                 }
-                5 => {
+                6 => {
                     tell_user("Exiting. No changes made.");
                     log_message("Program exited by user");
                     return;
@@ -498,16 +502,16 @@ fn force_update(state: &AppState) {
     clear_screen();
     println!("\n{}\n", "=== FORCE UPDATE (WITH REBOOT) ===".blue().bold());
 
-    tell_system_with_progress("sudo apt update", "Updating package lists").ok();
+    tell_system_with_verbose("sudo apt update", "Updating package lists").ok();
 
     println!();
-    tell_system_with_progress("sudo apt full-upgrade -y", "Upgrading packages (this may take several minutes)").ok();
+    tell_system_with_verbose("sudo apt full-upgrade -y", "Upgrading packages (this may take several minutes)").ok();
 
     println!();
-    tell_system_with_progress("sudo apt autoremove -y", "Removing obsolete packages").ok();
+    tell_system_with_verbose("sudo apt autoremove -y", "Removing obsolete packages").ok();
 
     println!();
-    tell_system_with_progress("sudo apt autoclean", "Cleaning package cache").ok();
+    tell_system_with_verbose("sudo apt autoclean", "Cleaning package cache").ok();
 
     println!();
     success_message("✓ All updates completed successfully!");
@@ -541,16 +545,16 @@ fn all_update(state: &AppState) {
     clear_screen();
     println!("\n{}\n", "=== ALL UPDATE (NO REBOOT) ===".blue().bold());
 
-    tell_system_with_progress("sudo apt update", "Updating package lists").ok();
+    tell_system_with_verbose("sudo apt update", "Updating package lists").ok();
 
     println!();
-    tell_system_with_progress("sudo apt full-upgrade", "Upgrading packages (this may take several minutes)").ok();
+    tell_system_with_verbose("sudo apt full-upgrade", "Upgrading packages (this may take several minutes)").ok();
 
     println!();
-    tell_system_with_progress("sudo apt autoremove", "Removing obsolete packages").ok();
+    tell_system_with_verbose("sudo apt autoremove", "Removing obsolete packages").ok();
 
     println!();
-    tell_system_with_progress("sudo apt autoclean", "Cleaning package cache").ok();
+    tell_system_with_verbose("sudo apt autoclean", "Cleaning package cache").ok();
 
     println!();
     success_message("✓ All updates completed successfully!");
@@ -589,13 +593,13 @@ fn critical_update(state: &AppState) {
     clear_screen();
     println!("\n{}\n", "=== CRITICAL UPDATE (SECURITY ONLY) ===".blue().bold());
 
-    tell_system_with_progress("sudo apt update", "Updating package lists").ok();
+    tell_system_with_verbose("sudo apt update", "Updating package lists").ok();
 
     println!();
-    tell_system_with_progress("sudo apt upgrade -y", "Installing security updates").ok();
+    tell_system_with_verbose("sudo apt upgrade -y", "Installing security updates").ok();
 
     println!();
-    tell_system_with_progress("sudo apt autoclean", "Cleaning package cache").ok();
+    tell_system_with_verbose("sudo apt autoclean", "Cleaning package cache").ok();
 
     println!();
     success_message("✓ Security updates completed successfully!");

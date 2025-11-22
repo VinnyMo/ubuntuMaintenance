@@ -8,7 +8,7 @@ use std::process::{Command, Stdio};
 use std::thread;
 use std::time::Duration;
 
-use crate::logger::log_command;
+use crate::logger::{log_command, log_verbose, read_verbose_log, get_verbose_log_path};
 
 /// Clear the terminal screen
 pub fn clear_screen() {
@@ -78,6 +78,7 @@ pub fn tell_system(command: &str) -> anyhow::Result<bool> {
 }
 
 /// Execute a system command silently with animated progress indicator
+#[allow(dead_code)]
 pub fn tell_system_with_progress(command: &str, message: &str) -> anyhow::Result<bool> {
     log_command(command, true);
 
@@ -129,6 +130,208 @@ pub fn tell_system_with_progress(command: &str, message: &str) -> anyhow::Result
                 thread::sleep(Duration::from_millis(500));
             }
             Err(e) => {
+                println!();
+                error_message(&format!("Error waiting for command: {}", e));
+                return Err(e.into());
+            }
+        }
+    }
+}
+
+/// Execute a system command with optional verbose output toggle
+/// Press 'v' during execution to toggle between progress indicator and live output
+pub fn tell_system_with_verbose(command: &str, message: &str) -> anyhow::Result<bool> {
+    use crossterm::{
+        event::{self, Event, KeyCode, poll},
+        terminal::{disable_raw_mode, enable_raw_mode},
+    };
+    use std::process::Stdio;
+    use std::io::{BufRead, BufReader};
+    use std::sync::{Arc, Mutex};
+    use std::sync::mpsc::{self, TryRecvError};
+
+    log_command(command, true);
+
+    // Start the command with piped output
+    let mut child = if command.contains('|') || command.contains('>') {
+        Command::new("sh")
+            .arg("-c")
+            .arg(command)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()?
+    } else {
+        let parts: Vec<&str> = command.split_whitespace().collect();
+        if parts.is_empty() {
+            return Ok(false);
+        }
+
+        Command::new(parts[0])
+            .args(&parts[1..])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()?
+    };
+
+    // Capture stdout and stderr
+    let stdout = child.stdout.take().expect("Failed to capture stdout");
+    let stderr = child.stderr.take().expect("Failed to capture stderr");
+
+    // Create channels for output lines
+    let (tx_out, rx_out) = mpsc::channel();
+    let (tx_err, rx_err) = mpsc::channel();
+
+    // Spawn thread to read stdout
+    let tx_out_clone = tx_out.clone();
+    thread::spawn(move || {
+        let reader = BufReader::new(stdout);
+        for line in reader.lines() {
+            if let Ok(line) = line {
+                let _ = tx_out_clone.send(line);
+            }
+        }
+    });
+
+    // Spawn thread to read stderr
+    thread::spawn(move || {
+        let reader = BufReader::new(stderr);
+        for line in reader.lines() {
+            if let Ok(line) = line {
+                let _ = tx_err.send(line);
+            }
+        }
+    });
+
+    let mut verbose_mode = false;
+    let mut dots = 0;
+    let output_buffer = Arc::new(Mutex::new(String::new()));
+    let output_buffer_clone = Arc::clone(&output_buffer);
+
+    println!("{}", message);
+    println!("{}", "Press 'v' to toggle verbose output".yellow());
+    println!();
+
+    // Enable raw mode for key detection
+    enable_raw_mode()?;
+
+    loop {
+        // Read any available output
+        loop {
+            match rx_out.try_recv() {
+                Ok(line) => {
+                    if let Ok(mut buffer) = output_buffer.lock() {
+                        buffer.push_str(&line);
+                        buffer.push('\n');
+                    }
+                    if verbose_mode {
+                        println!("{}", line);
+                    }
+                }
+                Err(TryRecvError::Empty) => break,
+                Err(TryRecvError::Disconnected) => break,
+            }
+        }
+
+        loop {
+            match rx_err.try_recv() {
+                Ok(line) => {
+                    if let Ok(mut buffer) = output_buffer.lock() {
+                        buffer.push_str(&line);
+                        buffer.push('\n');
+                    }
+                    if verbose_mode {
+                        eprintln!("{}", line.red());
+                    }
+                }
+                Err(TryRecvError::Empty) => break,
+                Err(TryRecvError::Disconnected) => break,
+            }
+        }
+
+        // Check if process has finished
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                // Process finished - read any remaining output
+                thread::sleep(Duration::from_millis(100));
+                loop {
+                    match rx_out.try_recv() {
+                        Ok(line) => {
+                            if let Ok(mut buffer) = output_buffer_clone.lock() {
+                                buffer.push_str(&line);
+                                buffer.push('\n');
+                            }
+                            if verbose_mode {
+                                println!("{}", line);
+                            }
+                        }
+                        Err(_) => break,
+                    }
+                }
+                loop {
+                    match rx_err.try_recv() {
+                        Ok(line) => {
+                            if let Ok(mut buffer) = output_buffer_clone.lock() {
+                                buffer.push_str(&line);
+                                buffer.push('\n');
+                            }
+                            if verbose_mode {
+                                eprintln!("{}", line.red());
+                            }
+                        }
+                        Err(_) => break,
+                    }
+                }
+
+                // Disable raw mode
+                let _ = disable_raw_mode();
+
+                // Log verbatim output
+                if let Ok(buffer) = output_buffer_clone.lock() {
+                    log_verbose(command, &buffer);
+                }
+
+                let success = status.success();
+                println!();
+                if success {
+                    success_message("✓ Complete");
+                } else {
+                    error_message("✗ Failed");
+                    log_command(command, false);
+                }
+                return Ok(success);
+            }
+            Ok(None) => {
+                // Still running - check for key presses
+
+                // Check for key press
+                if poll(Duration::from_millis(100))? {
+                    if let Event::Key(key) = event::read()? {
+                        if let KeyCode::Char('v') | KeyCode::Char('V') = key.code {
+                            verbose_mode = !verbose_mode;
+                            if !verbose_mode {
+                                // Switched back to progress mode - clear and reshow message
+                                print!("\r{}\r", " ".repeat(80));
+                                println!("{}", "Verbose mode OFF - showing progress indicator".yellow());
+                            } else {
+                                println!("{}", "Verbose mode ON - showing live output:".yellow());
+                                println!();
+                            }
+                        }
+                    }
+                }
+
+                // Show progress indicator if not in verbose mode
+                if !verbose_mode {
+                    dots = (dots + 1) % 4;
+                    let indicator = ".".repeat(dots);
+                    print!("\r{}{:<3}", message, indicator);
+                    io::stdout().flush()?;
+                }
+
+                thread::sleep(Duration::from_millis(100));
+            }
+            Err(e) => {
+                let _ = disable_raw_mode();
                 println!();
                 error_message(&format!("Error waiting for command: {}", e));
                 return Err(e.into());
@@ -268,4 +471,109 @@ pub fn countdown_with_cancel(seconds: u32, message: &str) -> bool {
     println!("\n");
     success_message("Reboot proceeding...");
     true
+}
+
+/// Display verbose log viewer with pagination
+pub fn view_verbose_logs() {
+    use crossterm::{
+        event::{self, Event, KeyCode},
+        terminal::{disable_raw_mode, enable_raw_mode},
+    };
+
+    clear_screen();
+    println!("\n{}\n", "=== VERBOSE LOG VIEWER ===".blue().bold());
+    println!("Log file: {}\n", get_verbose_log_path().yellow());
+
+    match read_verbose_log(500) {
+        Ok(lines) => {
+            if lines.is_empty() || (lines.len() == 1 && lines[0].contains("No verbose logs")) {
+                warning_message("No verbose logs found yet.");
+                println!("\nVerbose logs will be created when you run updates.");
+                println!("These logs contain the full command output for troubleshooting.");
+            } else {
+                let page_size = 30;
+                let mut offset = 0;
+                let total_lines = lines.len();
+
+                loop {
+                    clear_screen();
+                    println!("\n{}\n", "=== VERBOSE LOG VIEWER ===".blue().bold());
+                    println!("Log file: {}", get_verbose_log_path().yellow());
+                    println!("Showing lines {}-{} of {}\n",
+                        offset + 1,
+                        (offset + page_size).min(total_lines),
+                        total_lines);
+                    println!("{}", "=".repeat(80).dimmed());
+
+                    // Display current page
+                    let end = (offset + page_size).min(total_lines);
+                    for line in &lines[offset..end] {
+                        println!("{}", line);
+                    }
+
+                    println!("{}", "=".repeat(80).dimmed());
+                    println!();
+                    println!("{}", "↑/↓ arrows: Scroll | PgUp/PgDn: Page | q: Quit".dimmed());
+
+                    // Enable raw mode for key detection
+                    if enable_raw_mode().is_err() {
+                        break;
+                    }
+
+                    // Wait for key press
+                    let should_quit = if let Ok(Event::Key(key)) = event::read() {
+                        match key.code {
+                            KeyCode::Up => {
+                                if offset > 0 {
+                                    offset = offset.saturating_sub(1);
+                                }
+                                false
+                            }
+                            KeyCode::Down => {
+                                if offset + page_size < total_lines {
+                                    offset += 1;
+                                }
+                                false
+                            }
+                            KeyCode::PageUp => {
+                                offset = offset.saturating_sub(page_size);
+                                false
+                            }
+                            KeyCode::PageDown => {
+                                if offset + page_size < total_lines {
+                                    offset = (offset + page_size).min(total_lines - page_size);
+                                }
+                                false
+                            }
+                            KeyCode::Home => {
+                                offset = 0;
+                                false
+                            }
+                            KeyCode::End => {
+                                offset = total_lines.saturating_sub(page_size);
+                                false
+                            }
+                            KeyCode::Char('q') | KeyCode::Esc => true,
+                            _ => false,
+                        }
+                    } else {
+                        true
+                    };
+
+                    let _ = disable_raw_mode();
+
+                    if should_quit {
+                        break;
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            error_message(&format!("Error reading log file: {}", e));
+        }
+    }
+
+    println!();
+    println!("Press Enter to return to menu...");
+    let _ = get_input();
 }
