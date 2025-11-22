@@ -1,3 +1,13 @@
+ubuntu-maintenance (3.1.8-1~noble1) noble; urgency=medium
+
+  * FEATURE: Added verbose logging system - all command output saved to /var/log/ubuntu_maintenance_verbose.log
+  * FEATURE: Added real-time output toggle - press 'v' during updates to show/hide live command output
+  * FEATURE: Added "View Logs" menu option with paginated log viewer and arrow key navigation
+  * IMPROVEMENT: Async output capture using threads and channels for non-blocking operation
+  * IMPROVEMENT: Better troubleshooting with full apt/dpkg output available for review
+
+ -- Vincent T. Mossman <vincent.mossman@gmail.com>  Sat, 22 Nov 2025 20:33:57 +0000
+
 ubuntu-maintenance (3.1.7-1~noble1) noble; urgency=medium
 
   * PACKAGING: Fixed postinst/postrm scripts to use correct binary name
