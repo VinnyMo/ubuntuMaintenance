@@ -84,7 +84,7 @@ pub fn log_verbose(command: &str, output: &str) {
     }
 }
 
-/// Read the last N lines from the verbose log file
+/// Read the last N lines from the verbose log file (newest first)
 pub fn read_verbose_log(max_lines: usize) -> anyhow::Result<Vec<String>> {
     use std::fs::File;
     use std::io::{BufRead, BufReader};
@@ -102,12 +102,14 @@ pub fn read_verbose_log(max_lines: usize) -> anyhow::Result<Vec<String>> {
         .filter_map(Result::ok)
         .collect();
 
-    // Return last N lines
+    // Return last N lines, reversed (newest first)
     let start = if lines.len() > max_lines {
         lines.len() - max_lines
     } else {
         0
     };
 
-    Ok(lines[start..].to_vec())
+    let mut result = lines[start..].to_vec();
+    result.reverse();
+    Ok(result)
 }

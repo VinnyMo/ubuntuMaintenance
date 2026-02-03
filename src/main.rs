@@ -19,7 +19,7 @@ use std::thread;
 use std::time::Duration;
 use utils::*;
 
-const VERSION: &str = "3.1.8";
+const VERSION: &str = "3.1.9";
 const REBOOT_DELAY_MINUTES: i32 = 5;
 
 #[derive(Parser, Debug)]
@@ -149,13 +149,16 @@ fn main_menu() {
                     KeyCode::Up => {
                         if selected > 0 {
                             selected -= 1;
-                            // Skip blank lines
-                            while selected < menu_items.len() && menu_items[selected].is_empty() {
-                                if selected > 0 {
-                                    selected -= 1;
-                                } else {
-                                    break;
-                                }
+                        } else {
+                            // Wrap to bottom
+                            selected = menu_items.len() - 1;
+                        }
+                        // Skip blank lines
+                        while menu_items[selected].is_empty() {
+                            if selected > 0 {
+                                selected -= 1;
+                            } else {
+                                selected = menu_items.len() - 1;
                             }
                         }
                         break None;
@@ -163,13 +166,16 @@ fn main_menu() {
                     KeyCode::Down => {
                         if selected < menu_items.len() - 1 {
                             selected += 1;
-                            // Skip blank lines
-                            while selected < menu_items.len() && menu_items[selected].is_empty() {
-                                if selected < menu_items.len() - 1 {
-                                    selected += 1;
-                                } else {
-                                    break;
-                                }
+                        } else {
+                            // Wrap to top
+                            selected = 0;
+                        }
+                        // Skip blank lines
+                        while menu_items[selected].is_empty() {
+                            if selected < menu_items.len() - 1 {
+                                selected += 1;
+                            } else {
+                                selected = 0;
                             }
                         }
                         break None;
@@ -260,12 +266,14 @@ fn run_updates_menu() {
                     KeyCode::Up => {
                         if selected > 0 {
                             selected -= 1;
-                            while selected < menu_items.len() && menu_items[selected].is_empty() {
-                                if selected > 0 {
-                                    selected -= 1;
-                                } else {
-                                    break;
-                                }
+                        } else {
+                            selected = menu_items.len() - 1;
+                        }
+                        while menu_items[selected].is_empty() {
+                            if selected > 0 {
+                                selected -= 1;
+                            } else {
+                                selected = menu_items.len() - 1;
                             }
                         }
                         break None;
@@ -273,12 +281,14 @@ fn run_updates_menu() {
                     KeyCode::Down => {
                         if selected < menu_items.len() - 1 {
                             selected += 1;
-                            while selected < menu_items.len() && menu_items[selected].is_empty() {
-                                if selected < menu_items.len() - 1 {
-                                    selected += 1;
-                                } else {
-                                    break;
-                                }
+                        } else {
+                            selected = 0;
+                        }
+                        while menu_items[selected].is_empty() {
+                            if selected < menu_items.len() - 1 {
+                                selected += 1;
+                            } else {
+                                selected = 0;
                             }
                         }
                         break None;
@@ -393,19 +403,19 @@ fn show_information() {
 
     println!("Updates: {} available ({} security)", updates_count, security_count);
 
-    // Disk usage
+    // Disk usage (using -H for SI units: GB instead of GiB)
     if let Ok(output) = Command::new("sh")
         .arg("-c")
-        .arg("df -h / | tail -1 | awk '{print $5 \" used | \" $4 \" free | \" $2 \" total\"}'")
+        .arg("df -H / | tail -1 | awk '{print $5 \" used | \" $4 \" free | \" $2 \" total\"}'")
         .output()
     {
         println!("Disk (root): {}", String::from_utf8_lossy(&output.stdout).trim());
     }
 
-    // Memory usage
+    // Memory usage (using --si for SI units: GB instead of GiB)
     if let Ok(output) = Command::new("sh")
         .arg("-c")
-        .arg("free -h | awk 'NR==2 {print $3 \" used | \" $7 \" available | \" $2 \" total\"}'")
+        .arg("free -h --si | awk 'NR==2 {print $3 \" used | \" $7 \" available | \" $2 \" total\"}'")
         .output()
     {
         println!("Memory: {}", String::from_utf8_lossy(&output.stdout).trim());
@@ -658,12 +668,14 @@ fn manage_schedule() {
                     KeyCode::Up => {
                         if selected > 0 {
                             selected -= 1;
-                            while selected < menu_items.len() && menu_items[selected].is_empty() {
-                                if selected > 0 {
-                                    selected -= 1;
-                                } else {
-                                    break;
-                                }
+                        } else {
+                            selected = menu_items.len() - 1;
+                        }
+                        while menu_items[selected].is_empty() {
+                            if selected > 0 {
+                                selected -= 1;
+                            } else {
+                                selected = menu_items.len() - 1;
                             }
                         }
                         break None;
@@ -671,12 +683,14 @@ fn manage_schedule() {
                     KeyCode::Down => {
                         if selected < menu_items.len() - 1 {
                             selected += 1;
-                            while selected < menu_items.len() && menu_items[selected].is_empty() {
-                                if selected < menu_items.len() - 1 {
-                                    selected += 1;
-                                } else {
-                                    break;
-                                }
+                        } else {
+                            selected = 0;
+                        }
+                        while menu_items[selected].is_empty() {
+                            if selected < menu_items.len() - 1 {
+                                selected += 1;
+                            } else {
+                                selected = 0;
                             }
                         }
                         break None;
@@ -747,12 +761,16 @@ fn add_schedule_menu() {
                     KeyCode::Up => {
                         if selected > 0 {
                             selected -= 1;
+                        } else {
+                            selected = freq_items.len() - 1;
                         }
                         break None;
                     }
                     KeyCode::Down => {
                         if selected < freq_items.len() - 1 {
                             selected += 1;
+                        } else {
+                            selected = 0;
                         }
                         break None;
                     }
@@ -810,12 +828,16 @@ fn add_schedule_menu() {
                     KeyCode::Up => {
                         if selected > 0 {
                             selected -= 1;
+                        } else {
+                            selected = mode_items.len() - 1;
                         }
                         break None;
                     }
                     KeyCode::Down => {
                         if selected < mode_items.len() - 1 {
                             selected += 1;
+                        } else {
+                            selected = 0;
                         }
                         break None;
                     }

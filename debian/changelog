@@ -1,3 +1,12 @@
+ubuntu-maintenance (3.1.9-1~noble1) noble; urgency=medium
+
+  * FIX: Menu navigation now wraps around (up at top goes to bottom, down at bottom goes to top)
+  * FIX: System info now displays storage in GB instead of GiB (SI units)
+  * FIX: Verbose log viewer now shows newest entries first for easier troubleshooting
+  * Closes GitHub issues #1 and #2
+
+ -- Vincent T. Mossman <vincent.mossman@gmail.com>  Mon, 03 Feb 2026 00:00:00 +0000
+
 ubuntu-maintenance (3.1.8-1~noble1) noble; urgency=medium
 
   * FEATURE: Added verbose logging system - all command output saved to /var/log/ubuntu_maintenance_verbose.log
