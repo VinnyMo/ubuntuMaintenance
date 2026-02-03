@@ -207,12 +207,12 @@ pub fn tell_system_with_verbose(command: &str, message: &str) -> anyhow::Result<
     let output_buffer = Arc::new(Mutex::new(String::new()));
     let output_buffer_clone = Arc::clone(&output_buffer);
 
-    println!("{}", message);
-    println!("{}", "Press 'v' to toggle verbose output".yellow());
-    println!();
-
     // Enable raw mode for key detection
     enable_raw_mode()?;
+
+    // Initial progress display
+    print!("{} {} ", message, "[v=verbose]".dimmed());
+    io::stdout().flush()?;
 
     loop {
         // Read any available output
@@ -224,7 +224,9 @@ pub fn tell_system_with_verbose(command: &str, message: &str) -> anyhow::Result<
                         buffer.push('\n');
                     }
                     if verbose_mode {
-                        println!("{}", line);
+                        // Clear current line and print output
+                        print!("\r{}\r", " ".repeat(80));
+                        println!("  {}", line);
                     }
                 }
                 Err(TryRecvError::Empty) => break,
@@ -240,7 +242,8 @@ pub fn tell_system_with_verbose(command: &str, message: &str) -> anyhow::Result<
                         buffer.push('\n');
                     }
                     if verbose_mode {
-                        eprintln!("{}", line.red());
+                        print!("\r{}\r", " ".repeat(80));
+                        println!("  {}", line.yellow());
                     }
                 }
                 Err(TryRecvError::Empty) => break,
@@ -261,7 +264,8 @@ pub fn tell_system_with_verbose(command: &str, message: &str) -> anyhow::Result<
                                 buffer.push('\n');
                             }
                             if verbose_mode {
-                                println!("{}", line);
+                                print!("\r{}\r", " ".repeat(80));
+                                println!("  {}", line);
                             }
                         }
                         Err(_) => break,
@@ -275,7 +279,8 @@ pub fn tell_system_with_verbose(command: &str, message: &str) -> anyhow::Result<
                                 buffer.push('\n');
                             }
                             if verbose_mode {
-                                eprintln!("{}", line.red());
+                                print!("\r{}\r", " ".repeat(80));
+                                println!("  {}", line.yellow());
                             }
                         }
                         Err(_) => break,
@@ -290,31 +295,27 @@ pub fn tell_system_with_verbose(command: &str, message: &str) -> anyhow::Result<
                     log_verbose(command, &buffer);
                 }
 
+                // Clear line and show result
+                print!("\r{}\r", " ".repeat(80));
                 let success = status.success();
-                println!();
                 if success {
-                    success_message("✓ Complete");
+                    println!("{} {}", message, "✓".green().bold());
                 } else {
-                    error_message("✗ Failed");
+                    println!("{} {}", message, "✗".red().bold());
                     log_command(command, false);
                 }
                 return Ok(success);
             }
             Ok(None) => {
                 // Still running - check for key presses
-
-                // Check for key press
                 if poll(Duration::from_millis(100))? {
                     if let Event::Key(key) = event::read()? {
                         if let KeyCode::Char('v') | KeyCode::Char('V') = key.code {
                             verbose_mode = !verbose_mode;
-                            if !verbose_mode {
-                                // Switched back to progress mode - clear and reshow message
-                                print!("\r{}\r", " ".repeat(80));
-                                println!("{}", "Verbose mode OFF - showing progress indicator".yellow());
-                            } else {
-                                println!("{}", "Verbose mode ON - showing live output:".yellow());
-                                println!();
+                            // Clear line and show new mode
+                            print!("\r{}\r", " ".repeat(80));
+                            if verbose_mode {
+                                println!("{} {} {}", message, "[VERBOSE]".yellow().bold(), "press 'v' to hide".dimmed());
                             }
                         }
                     }
@@ -323,8 +324,13 @@ pub fn tell_system_with_verbose(command: &str, message: &str) -> anyhow::Result<
                 // Show progress indicator if not in verbose mode
                 if !verbose_mode {
                     dots = (dots + 1) % 4;
-                    let indicator = ".".repeat(dots);
-                    print!("\r{}{:<3}", message, indicator);
+                    let spinner = match dots {
+                        0 => "⠋",
+                        1 => "⠙",
+                        2 => "⠹",
+                        _ => "⠸",
+                    };
+                    print!("\r{} {} {}", message, "[v=verbose]".dimmed(), spinner);
                     io::stdout().flush()?;
                 }
 
@@ -332,8 +338,8 @@ pub fn tell_system_with_verbose(command: &str, message: &str) -> anyhow::Result<
             }
             Err(e) => {
                 let _ = disable_raw_mode();
-                println!();
-                error_message(&format!("Error waiting for command: {}", e));
+                print!("\r{}\r", " ".repeat(80));
+                error_message(&format!("{} - Error: {}", message, e));
                 return Err(e.into());
             }
         }

@@ -1,3 +1,12 @@
+ubuntu-maintenance (3.1.10-1~noble1) noble; urgency=medium
+
+  * FIX: Added missing -y flag to apt commands in all_update mode (was hanging waiting for input)
+  * IMPROVEMENT: Cleaner verbose output toggle - single line display with spinner
+  * IMPROVEMENT: Press 'v' shows inline verbose output, press again to hide
+  * IMPROVEMENT: Task completion shown on same line with checkmark
+
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Mon, 03 Feb 2026 14:15:00 +0000
+
 ubuntu-maintenance (3.1.9-1~noble1) noble; urgency=medium
 
   * FIX: Menu navigation now wraps around (up at top goes to bottom, down at bottom goes to top)
@@ -5,7 +14,7 @@ ubuntu-maintenance (3.1.9-1~noble1) noble; urgency=medium
   * FIX: Verbose log viewer now shows newest entries first for easier troubleshooting
   * Closes GitHub issues #1 and #2
 
- -- Vincent T. Mossman <vincent.mossman@gmail.com>  Mon, 03 Feb 2026 00:00:00 +0000
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Mon, 03 Feb 2026 00:00:00 +0000
 
 ubuntu-maintenance (3.1.8-1~noble1) noble; urgency=medium
 
@@ -15,7 +24,7 @@ ubuntu-maintenance (3.1.8-1~noble1) noble; urgency=medium
   * IMPROVEMENT: Async output capture using threads and channels for non-blocking operation
   * IMPROVEMENT: Better troubleshooting with full apt/dpkg output available for review
 
- -- Vincent T. Mossman <vincent.mossman@gmail.com>  Sat, 22 Nov 2025 20:33:57 +0000
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Sat, 22 Nov 2025 20:33:57 +0000
 
 ubuntu-maintenance (3.1.7-1~noble1) noble; urgency=medium
 
@@ -23,21 +32,21 @@ ubuntu-maintenance (3.1.7-1~noble1) noble; urgency=medium
   * PACKAGING: Updated log file name from system_update.log to ubuntu_maintenance.log
   * PACKAGING: Corrected installation messages to reference ubuntu-maintenance
 
- -- Vincent T. Mossman <vincent.mossman@gmail.com>  Sat, 01 Nov 2025 00:30:00 +0000
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Sat, 01 Nov 2025 00:30:00 +0000
 
 ubuntu-maintenance (3.1.6-1~noble1) noble; urgency=medium
 
   * PACKAGING: Vendored all Rust dependencies for offline Launchpad builds
   * PACKAGING: Fixed network access issue during PPA build process
 
- -- Vincent T. Mossman <vincent.mossman@gmail.com>  Sat, 01 Nov 2025 00:00:00 +0000
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Sat, 01 Nov 2025 00:00:00 +0000
 
 ubuntu-maintenance (3.1.5-1~noble1) noble; urgency=medium
 
   * PACKAGING: Downgraded Cargo.lock to version 3 for Noble compatibility
   * PACKAGING: Fixed build failure caused by Cargo.lock version 4 format
 
- -- Vincent T. Mossman <vincent.mossman@gmail.com>  Fri, 31 Oct 2025 23:40:00 +0000
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Fri, 31 Oct 2025 23:40:00 +0000
 
 ubuntu-maintenance (3.1.4-1~noble1) noble; urgency=medium
 

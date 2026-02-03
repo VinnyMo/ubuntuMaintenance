@@ -19,7 +19,7 @@ use std::thread;
 use std::time::Duration;
 use utils::*;
 
-const VERSION: &str = "3.1.9";
+const VERSION: &str = "3.1.10";
 const REBOOT_DELAY_MINUTES: i32 = 5;
 
 #[derive(Parser, Debug)]
@@ -543,8 +543,8 @@ fn all_update(state: &AppState) {
         tell_user("");
         tell_user("The following commands would be executed:");
         tell_user("  1. sudo apt update");
-        tell_user("  2. sudo apt full-upgrade");
-        tell_user("  3. sudo apt autoremove");
+        tell_user("  2. sudo apt full-upgrade -y");
+        tell_user("  3. sudo apt autoremove -y");
         tell_user("  4. sudo apt autoclean");
         tell_user("");
         tell_user("Press Enter to return to menu...");
@@ -558,10 +558,10 @@ fn all_update(state: &AppState) {
     tell_system_with_verbose("sudo apt update", "Updating package lists").ok();
 
     println!();
-    tell_system_with_verbose("sudo apt full-upgrade", "Upgrading packages (this may take several minutes)").ok();
+    tell_system_with_verbose("sudo apt full-upgrade -y", "Upgrading packages (this may take several minutes)").ok();
 
     println!();
-    tell_system_with_verbose("sudo apt autoremove", "Removing obsolete packages").ok();
+    tell_system_with_verbose("sudo apt autoremove -y", "Removing obsolete packages").ok();
 
     println!();
     tell_system_with_verbose("sudo apt autoclean", "Cleaning package cache").ok();
