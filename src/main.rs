@@ -15,7 +15,7 @@ use std::thread;
 use std::time::Duration;
 use utils::*;
 
-const VERSION: &str = "3.1.10";
+const VERSION: &str = "3.1.11";
 const REBOOT_DELAY_MINUTES: i32 = 5;
 
 #[derive(Parser, Debug)]

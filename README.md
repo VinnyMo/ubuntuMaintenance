@@ -3,7 +3,7 @@
 A production-ready command-line utility for automated Ubuntu/Debian server maintenance. Designed for safe, logged, and auditable system updates with multiple operation modes.
 
 **Author:** Vincent T. Mossman
-**Version:** 3.1.10 (Rust Edition)
+**Version:** 3.1.11 (Rust Edition)
 **License:** MIT
 **Platform:** Ubuntu 24.04 (Noble) only
 
@@ -516,7 +516,7 @@ File issues on GitHub with:
 
 ## Changelog
 
-### Version 3.1.10 (2026-04-03) - QOL Refresh
+### Version 3.1.11 (2026-04-03) - QOL Refresh
 - Reworked the interactive navigation so menus share one consistent full-screen style
 - Reformatted system information into a faster, easier-to-scan summary with short-lived caching
 - Improved schedule viewing so cron jobs are explained in plain language

@@ -1,3 +1,12 @@
+ubuntu-maintenance (3.1.11-1~noble1) noble; urgency=medium
+
+  * UI: unify the interactive menus behind a consistent full-screen layout
+  * UI: rework system information into a readable cached summary
+  * UI: improve schedule viewing with plain-language cron explanations
+  * UI: clean up verbose log browsing and align bundled help/man pages
+
+ -- Vincent T. Mossman <vinny.mossman@gmail.com>  Fri, 03 Apr 2026 19:30:00 +0000
+
 ubuntu-maintenance (3.1.10-1~noble1) noble; urgency=medium
 
   * FIX: Added missing -y flag to apt commands in all_update mode (was hanging waiting for input)

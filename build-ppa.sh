@@ -5,16 +5,15 @@
 #   ./build-ppa.sh [distribution]
 #
 # Examples:
-#   ./build-ppa.sh              # Build for jammy (22.04)
-#   ./build-ppa.sh focal        # Build for focal (20.04)
+#   ./build-ppa.sh              # Build for noble (24.04)
 #   ./build-ppa.sh noble        # Build for noble (24.04)
 #   ./build-ppa.sh all          # Build for all supported distributions
 
-set -e
+set -euo pipefail
 
 # Configuration
 PACKAGE="ubuntu-maintenance"
-VERSION="3.1.10"
+VERSION="3.1.11"
 MAINTAINER_NAME="Vincent T. Mossman"
 MAINTAINER_EMAIL="vinny.mossman@gmail.com"
 
@@ -156,8 +155,9 @@ build_source_package() {
     fi
 
     print_success "Running debuild..."
-    if debuild $build_opts 2>&1 | tee /tmp/debuild.log | grep -E "dpkg-buildpackage|dpkg-source|error|warning"; then
+    if debuild $build_opts 2>&1 | tee /tmp/debuild.log; then
         print_success "Source package built successfully"
+        grep -E "dpkg-buildpackage|dpkg-source|error|warning" /tmp/debuild.log || true
     else
         print_error "Build failed! Check /tmp/debuild.log"
         exit 1
