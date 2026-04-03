@@ -98,9 +98,7 @@ pub fn read_verbose_log(max_lines: usize) -> anyhow::Result<Vec<String>> {
 
     let file = File::open(path)?;
     let reader = BufReader::new(file);
-    let lines: Vec<String> = reader.lines()
-        .filter_map(Result::ok)
-        .collect();
+    let lines: Vec<String> = reader.lines().filter_map(Result::ok).collect();
 
     // Return last N lines, reversed (newest first)
     let start = if lines.len() > max_lines {

@@ -1,4 +1,4 @@
-.TH UBUNTU-MAINTENANCE 1 "October 2025" "version 2.1.0" "Ubuntu Server Maintenance Tool"
+.TH UBUNTU-MAINTENANCE 1 "April 2026" "version 3.1.10" "Ubuntu Server Maintenance Tool"
 .SH NAME
 ubuntu-maintenance \- automated Ubuntu/Debian server maintenance and update utility (Rust Edition)
 .SH SYNOPSIS
@@ -36,20 +36,24 @@ Display version information.
 .SH INTERACTIVE MODE
 When run without arguments,
 .B ubuntu-maintenance
-presents an interactive menu with the following options:
+presents a full-screen interactive menu with the following options:
 .PP
 .nf
-1) Force Update (with reboot)
-2) All Update (no reboot)
-3) Critical Update (security only)
-4) System Information
-5) Help
-6) Manage Update Schedule
-0) Exit
+Run Updates
+Manage Schedule
+System Information
+View Logs
+Help
+Exit
 .fi
 .PP
-.B Manage Update Schedule
-(option 6) provides an interactive interface to create, view, and remove automated update schedules using cron. Users can set up daily, weekly, or weekday schedules with their choice of update mode (all, critical, or force). This eliminates the need to manually edit crontab files.
+Navigation uses the arrow keys and Enter. Escape or q returns to the previous screen.
+.PP
+.B Manage Schedule
+provides an interactive interface to create, view, and remove automated update schedules using cron. Users can set up daily, weekly, or weekday schedules with their choice of update mode (all, critical, or force). This eliminates the need to manually edit crontab files.
+.PP
+.B View Logs
+opens a paginated browser for the verbose command log so users can inspect recent maintenance runs without leaving the application.
 .SH EXIT STATUS
 .TP
 .B 0
@@ -61,6 +65,9 @@ Failure (insufficient privileges, invalid arguments, or system errors)
 .TP
 .I /var/log/ubuntu_maintenance.log
 Primary log file for all operations (falls back to /tmp/ubuntu_maintenance.log if primary is unavailable)
+.TP
+.I /var/log/ubuntu_maintenance_verbose.log
+Verbose command output log used by the in-app log viewer (falls back to /tmp/ubuntu_maintenance_verbose.log if needed)
 .TP
 .I /usr/bin/ubuntu-maintenance
 Installed binary location
@@ -101,7 +108,7 @@ For daily security updates only:
 0 2 * * * /usr/bin/ubuntu-maintenance -c >> /var/log/security_updates.log 2>&1
 .fi
 .PP
-Alternatively, use the built-in schedule manager (option 6 in interactive mode) to configure cron jobs without manual editing.
+Alternatively, use the built-in schedule manager in interactive mode to configure cron jobs without manual editing.
 .SH SECURITY
 Version 2.1 Rust Edition provides enhanced security:
 .IP \[bu] 2

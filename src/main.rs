@@ -8,11 +8,7 @@ mod utils;
 
 use clap::Parser;
 use colored::*;
-use crossterm::{
-    event::{self, Event, KeyCode, KeyEvent},
-    terminal::{disable_raw_mode, enable_raw_mode},
-};
-use logger::{log_message, get_log_path};
+use logger::{get_log_path, log_message};
 use schedule::{add_schedule, has_existing_schedule, remove_all_schedules, show_current_schedule};
 use std::process::{Command, Stdio};
 use std::thread;
@@ -105,326 +101,149 @@ fn main() {
 }
 
 fn main_menu() {
-    let menu_items = vec![
-        "Run Updates...",
-        "Manage Update Schedule...",
-        "System Information",
-        "View Logs",
-        "Help",
-        "", // Blank line
-        "Exit",
+    let menu_items = [
+        (
+            "Run Updates",
+            "Choose between all updates, security-only updates, or a rebooting maintenance run.",
+        ),
+        (
+            "Manage Schedule",
+            "Review scheduled jobs, add a new automation rule, or remove old cron entries.",
+        ),
+        (
+            "System Information",
+            "See update counts, uptime, storage, memory, and OS details in one readable summary.",
+        ),
+        (
+            "View Logs",
+            "Browse the detailed verbose log captured during update runs.",
+        ),
+        (
+            "Help",
+            "Review command-line options, update modes, and log file locations.",
+        ),
+        ("Exit", "Leave the tool without making changes."),
     ];
 
-    let mut selected = 0;
-
     loop {
-        clear_screen();
-
-        // Header
-        println!("\n{}\n", "=== UBUNTU MAINTENANCE ===".blue().bold());
-
-        // Menu items
-        for (i, item) in menu_items.iter().enumerate() {
-            if item.is_empty() {
-                println!(); // Blank line
-            } else if i == selected {
-                println!("{} {}", "*".green().bold(), item.green());
-            } else {
-                println!("  {}", item);
+        match run_menu(
+            "Main Menu",
+            "Beginner-friendly system maintenance for Ubuntu and Debian systems.",
+            &menu_items,
+        ) {
+            Some(0) => run_updates_menu(),
+            Some(1) => manage_schedule(),
+            Some(2) => {
+                show_information();
+                wait_for_enter("Press Enter to return to the main menu...");
             }
-        }
-
-        println!("\n{}", "Use ↑/↓ arrow keys to navigate, Enter to select".dimmed());
-
-        // Enable raw mode to capture arrow keys
-        if enable_raw_mode().is_err() {
-            error_message("Failed to enable terminal raw mode");
-            return;
-        }
-
-        // Wait for key press
-        let choice = loop {
-            if let Ok(Event::Key(KeyEvent { code, .. })) = event::read() {
-                match code {
-                    KeyCode::Up => {
-                        if selected > 0 {
-                            selected -= 1;
-                        } else {
-                            // Wrap to bottom
-                            selected = menu_items.len() - 1;
-                        }
-                        // Skip blank lines
-                        while menu_items[selected].is_empty() {
-                            if selected > 0 {
-                                selected -= 1;
-                            } else {
-                                selected = menu_items.len() - 1;
-                            }
-                        }
-                        break None;
-                    }
-                    KeyCode::Down => {
-                        if selected < menu_items.len() - 1 {
-                            selected += 1;
-                        } else {
-                            // Wrap to top
-                            selected = 0;
-                        }
-                        // Skip blank lines
-                        while menu_items[selected].is_empty() {
-                            if selected < menu_items.len() - 1 {
-                                selected += 1;
-                            } else {
-                                selected = 0;
-                            }
-                        }
-                        break None;
-                    }
-                    KeyCode::Enter => {
-                        break Some(selected);
-                    }
-                    KeyCode::Char('q') | KeyCode::Esc => {
-                        break Some(6); // Exit option (last item)
-                    }
-                    _ => {}
-                }
+            Some(3) => view_verbose_logs(),
+            Some(4) => {
+                show_help();
+                wait_for_enter("Press Enter to return to the main menu...");
             }
-        };
-
-        let _ = disable_raw_mode();
-
-        // Process selection
-        if let Some(idx) = choice {
-            match idx {
-                0 => {
-                    run_updates_menu();
-                }
-                1 => {
-                    manage_schedule();
-                }
-                2 => {
-                    show_information();
-                    tell_user("");
-                    tell_user("Press Enter to return to menu...");
-                    let _ = get_input();
-                }
-                3 => {
-                    view_verbose_logs();
-                }
-                4 => {
-                    show_help();
-                    tell_user("Press Enter to return to menu...");
-                    let _ = get_input();
-                }
-                6 => {
-                    tell_user("Exiting. No changes made.");
-                    log_message("Program exited by user");
-                    return;
-                }
-                _ => {}
+            Some(5) | None => {
+                tell_user("Exiting. No changes made.");
+                log_message("Program exited by user");
+                return;
             }
+            _ => {}
         }
     }
 }
 
 fn run_updates_menu() {
-    let menu_items = vec![
-        "Force Update (with reboot)",
-        "All Update (no reboot)",
-        "Critical Update (security only)",
-        "",
-        "Return to main menu",
+    let menu_items = [
+        (
+            "Force Update",
+            "Runs a full upgrade, cleans packages, and schedules an automatic reboot in 5 minutes.",
+        ),
+        (
+            "All Update",
+            "Runs a full upgrade without rebooting. Best default option for most systems.",
+        ),
+        (
+            "Critical Update",
+            "Installs security-focused upgrades with no automatic reboot.",
+        ),
+        ("Back", "Return to the main menu."),
     ];
 
-    let mut selected = 0;
-
     loop {
-        clear_screen();
-        println!("\n{}\n", "=== RUN UPDATES ===".blue().bold());
+        let state = AppState { dry_run: false };
 
-        // Menu items
-        for (i, item) in menu_items.iter().enumerate() {
-            if item.is_empty() {
-                println!();
-            } else if i == selected {
-                println!("{} {}", "*".green().bold(), item.green());
-            } else {
-                println!("  {}", item);
-            }
-        }
-
-        println!("\n{}", "Use ↑/↓ arrow keys to navigate, Enter to select".dimmed());
-
-        if enable_raw_mode().is_err() {
-            error_message("Failed to enable terminal raw mode");
-            return;
-        }
-
-        let choice = loop {
-            if let Ok(Event::Key(KeyEvent { code, .. })) = event::read() {
-                match code {
-                    KeyCode::Up => {
-                        if selected > 0 {
-                            selected -= 1;
-                        } else {
-                            selected = menu_items.len() - 1;
-                        }
-                        while menu_items[selected].is_empty() {
-                            if selected > 0 {
-                                selected -= 1;
-                            } else {
-                                selected = menu_items.len() - 1;
-                            }
-                        }
-                        break None;
-                    }
-                    KeyCode::Down => {
-                        if selected < menu_items.len() - 1 {
-                            selected += 1;
-                        } else {
-                            selected = 0;
-                        }
-                        while menu_items[selected].is_empty() {
-                            if selected < menu_items.len() - 1 {
-                                selected += 1;
-                            } else {
-                                selected = 0;
-                            }
-                        }
-                        break None;
-                    }
-                    KeyCode::Enter => {
-                        break Some(selected);
-                    }
-                    KeyCode::Char('q') | KeyCode::Esc => {
-                        break Some(4); // Return option
-                    }
-                    _ => {}
-                }
-            }
-        };
-
-        let _ = disable_raw_mode();
-
-        if let Some(idx) = choice {
-            let state = AppState { dry_run: false };
-
-            match idx {
-                0 => {
-                    force_update(&state);
-                }
-                1 => {
-                    all_update(&state);
-                }
-                2 => {
-                    critical_update(&state);
-                }
-                4 => return,
-                _ => {}
-            }
+        match run_menu(
+            "Run Updates",
+            "Pick the maintenance mode that matches your comfort level and reboot needs.",
+            &menu_items,
+        ) {
+            Some(0) => force_update(&state),
+            Some(1) => all_update(&state),
+            Some(2) => critical_update(&state),
+            Some(3) | None => return,
+            _ => {}
         }
     }
 }
 
 fn show_help() {
-    clear_screen();
-    println!("\n{}\n", "=== HELP ===".blue().bold());
-    println!("Usage: sudo ubuntu-maintenance [options]\n");
-    println!("Options:");
-    println!("  -f, --force       Force update with reboot");
-    println!("  -a, --all         All updates without reboot");
-    println!("  -c, --critical    Critical security updates only");
-    println!("  -i, --info        Display system information");
-    println!("  -d, --dry-run     Preview updates without applying");
-    println!("  -h, --help        Display this help message\n");
-    println!("Interactive Mode: Run without arguments for interactive menu\n");
-    println!("Examples:");
-    println!("  sudo ubuntu-maintenance              # Interactive mode");
-    println!("  sudo ubuntu-maintenance -a           # Run all updates");
-    println!("  sudo ubuntu-maintenance --dry-run -a # Preview updates\n");
-    println!("Logs: {}\n", get_log_path());
+    show_banner(
+        "Help",
+        "Interactive mode is for guided use; flags are available for repeatable command-line runs.",
+    );
+    section_heading("Usage");
+    println!("  sudo ubuntu-maintenance");
+    println!("  sudo ubuntu-maintenance [options]");
+    println!();
+    section_heading("Options");
+    println!("  -f, --force       Full update with an automatic reboot");
+    println!("  -a, --all         Full update without rebooting");
+    println!("  -c, --critical    Security-focused update only");
+    println!("  -i, --info        Show current system information");
+    println!("  -d, --dry-run     Preview commands without making changes");
+    println!("  -h, --help        Show command help");
+    println!();
+    section_heading("Recommended flow");
+    println!("  1. Start with `sudo ubuntu-maintenance --dry-run -a`");
+    println!("  2. Review the plan and available updates");
+    println!("  3. Run `sudo ubuntu-maintenance -a` when ready");
+    println!();
+    section_heading("Log files");
+    println!("  Summary log : {}", get_log_path().yellow());
+    println!(
+        "  Verbose log : {}",
+        logger::get_verbose_log_path().yellow()
+    );
 }
 
 fn show_information() {
-    clear_screen();
-    println!("\n{}\n", "=== SYSTEM INFORMATION ===".blue().bold());
+    let snapshot = get_system_info_snapshot();
 
-    // Hostname and kernel
-    if let Ok(output) = Command::new("uname").arg("-n").output() {
-        print!("Hostname: {}", String::from_utf8_lossy(&output.stdout).trim());
-    }
-    if let Ok(output) = Command::new("uname").arg("-r").output() {
-        println!(" | Kernel: {}", String::from_utf8_lossy(&output.stdout).trim());
-    } else {
-        println!();
-    }
-
-    // OS version
-    if let Ok(output) = Command::new("sh")
-        .arg("-c")
-        .arg("lsb_release -d 2>/dev/null | cut -f2")
-        .output()
-    {
-        println!("OS: {}", String::from_utf8_lossy(&output.stdout).trim());
-    }
-
-    // Uptime and last reboot
-    if let Ok(output) = Command::new("uptime").arg("-p").output() {
-        print!("Uptime: {}", String::from_utf8_lossy(&output.stdout).trim());
-    }
-    if let Ok(output) = Command::new("sh")
-        .arg("-c")
-        .arg("who -b | awk '{print $3, $4}'")
-        .output()
-    {
-        println!(" | Last reboot: {}", String::from_utf8_lossy(&output.stdout).trim());
-    } else {
-        println!();
-    }
-
+    show_banner(
+        "System Information",
+        "This summary is cached briefly so repeat visits are fast.",
+    );
+    section_heading("Identity");
+    println!("  Hostname     {}", snapshot.hostname);
+    println!("  Operating OS {}", snapshot.os);
+    println!("  Kernel       {}", snapshot.kernel);
     println!();
-
-    // Package updates
-    let updates_count = Command::new("sh")
-        .arg("-c")
-        .arg("apt list --upgradable 2>/dev/null | grep -v 'Listing...' | wc -l")
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8_lossy(&o.stdout).trim().parse::<i32>().ok())
-        .unwrap_or(0);
-
-    let security_count = Command::new("sh")
-        .arg("-c")
-        .arg("apt list --upgradable 2>/dev/null | grep -i security | wc -l")
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8_lossy(&o.stdout).trim().parse::<i32>().ok())
-        .unwrap_or(0);
-
-    println!("Updates: {} available ({} security)", updates_count, security_count);
-
-    // Disk usage (using -H for SI units: GB instead of GiB)
-    if let Ok(output) = Command::new("sh")
-        .arg("-c")
-        .arg("df -H / | tail -1 | awk '{print $5 \" used | \" $4 \" free | \" $2 \" total\"}'")
-        .output()
-    {
-        println!("Disk (root): {}", String::from_utf8_lossy(&output.stdout).trim());
-    }
-
-    // Memory usage (using --si for SI units: GB instead of GiB)
-    if let Ok(output) = Command::new("sh")
-        .arg("-c")
-        .arg("free -h --si | awk 'NR==2 {print $3 \" used | \" $7 \" available | \" $2 \" total\"}'")
-        .output()
-    {
-        println!("Memory: {}", String::from_utf8_lossy(&output.stdout).trim());
-    }
-
+    section_heading("Health Summary");
+    println!(
+        "  Updates      {} available, {} security-related",
+        snapshot.updates_count.to_string().green().bold(),
+        snapshot.security_count.to_string().yellow().bold()
+    );
+    println!("  Disk         {}", snapshot.disk);
+    println!("  Memory       {}", snapshot.memory);
+    println!();
+    section_heading("Activity");
+    println!("  Uptime       {}", snapshot.uptime);
+    println!("  Last reboot  {}", snapshot.last_reboot);
+    println!("  Refreshed    {}", snapshot.fetched_at.dimmed());
     println!();
     log_message("System information displayed");
 }
-
 
 fn safe_reboot(delay_minutes: i32) {
     tell_user("");
@@ -465,7 +284,8 @@ fn safe_reboot(delay_minutes: i32) {
 
         // Show countdown with cancel option
         let seconds = (delay_minutes * 60) as u32;
-        let completed = countdown_with_cancel(seconds, "System will reboot when timer reaches 0:00");
+        let completed =
+            countdown_with_cancel(seconds, "System will reboot when timer reaches 0:00");
 
         if !completed {
             log_message("Reboot cancelled by user");
@@ -513,9 +333,14 @@ fn force_update(state: &AppState) {
     println!("\n{}\n", "=== FORCE UPDATE (WITH REBOOT) ===".blue().bold());
 
     tell_system_with_verbose("sudo apt update", "Updating package lists").ok();
+    invalidate_system_info_cache();
 
     println!();
-    tell_system_with_verbose("sudo apt full-upgrade -y", "Upgrading packages (this may take several minutes)").ok();
+    tell_system_with_verbose(
+        "sudo apt full-upgrade -y",
+        "Upgrading packages (this may take several minutes)",
+    )
+    .ok();
 
     println!();
     tell_system_with_verbose("sudo apt autoremove -y", "Removing obsolete packages").ok();
@@ -556,9 +381,14 @@ fn all_update(state: &AppState) {
     println!("\n{}\n", "=== ALL UPDATE (NO REBOOT) ===".blue().bold());
 
     tell_system_with_verbose("sudo apt update", "Updating package lists").ok();
+    invalidate_system_info_cache();
 
     println!();
-    tell_system_with_verbose("sudo apt full-upgrade -y", "Upgrading packages (this may take several minutes)").ok();
+    tell_system_with_verbose(
+        "sudo apt full-upgrade -y",
+        "Upgrading packages (this may take several minutes)",
+    )
+    .ok();
 
     println!();
     tell_system_with_verbose("sudo apt autoremove -y", "Removing obsolete packages").ok();
@@ -601,9 +431,13 @@ fn critical_update(state: &AppState) {
     }
 
     clear_screen();
-    println!("\n{}\n", "=== CRITICAL UPDATE (SECURITY ONLY) ===".blue().bold());
+    println!(
+        "\n{}\n",
+        "=== CRITICAL UPDATE (SECURITY ONLY) ===".blue().bold()
+    );
 
     tell_system_with_verbose("sudo apt update", "Updating package lists").ok();
+    invalidate_system_info_cache();
 
     println!();
     tell_system_with_verbose("sudo apt upgrade -y", "Installing security updates").ok();
@@ -630,239 +464,88 @@ fn critical_update(state: &AppState) {
 }
 
 fn manage_schedule() {
-    let menu_items = vec![
-        "View current schedule",
-        "Add a new schedule",
-        "Remove all schedules",
-        "",
-        "Return to main menu",
+    let menu_items = [
+        (
+            "View Current Schedule",
+            "See each scheduled job with a readable explanation of when it runs and what it does.",
+        ),
+        (
+            "Add a New Schedule",
+            "Create a daily, weekly, or weekday automation rule.",
+        ),
+        (
+            "Remove All Schedules",
+            "Delete every `ubuntu-maintenance` cron entry from the current user's crontab.",
+        ),
+        ("Back", "Return to the main menu."),
     ];
 
-    let mut selected = 0;
-
     loop {
-        clear_screen();
-        println!("\n{}\n", "=== MANAGE UPDATE SCHEDULE ===".blue().bold());
-
-        // Menu items
-        for (i, item) in menu_items.iter().enumerate() {
-            if item.is_empty() {
-                println!();
-            } else if i == selected {
-                println!("{} {}", "*".green().bold(), item.green());
-            } else {
-                println!("  {}", item);
+        match run_menu(
+            "Schedule Management",
+            "Automate maintenance without editing crontab by hand.",
+            &menu_items,
+        ) {
+            Some(0) => {
+                show_banner(
+                    "Schedule Management",
+                    "Automate maintenance without editing crontab by hand.",
+                );
+                let _ = show_current_schedule();
+                wait_for_enter("Press Enter to continue...");
             }
-        }
-
-        println!("\n{}", "Use ↑/↓ arrow keys to navigate, Enter to select".dimmed());
-
-        if enable_raw_mode().is_err() {
-            error_message("Failed to enable terminal raw mode");
-            return;
-        }
-
-        let choice = loop {
-            if let Ok(Event::Key(KeyEvent { code, .. })) = event::read() {
-                match code {
-                    KeyCode::Up => {
-                        if selected > 0 {
-                            selected -= 1;
-                        } else {
-                            selected = menu_items.len() - 1;
-                        }
-                        while menu_items[selected].is_empty() {
-                            if selected > 0 {
-                                selected -= 1;
-                            } else {
-                                selected = menu_items.len() - 1;
-                            }
-                        }
-                        break None;
-                    }
-                    KeyCode::Down => {
-                        if selected < menu_items.len() - 1 {
-                            selected += 1;
-                        } else {
-                            selected = 0;
-                        }
-                        while menu_items[selected].is_empty() {
-                            if selected < menu_items.len() - 1 {
-                                selected += 1;
-                            } else {
-                                selected = 0;
-                            }
-                        }
-                        break None;
-                    }
-                    KeyCode::Enter => {
-                        break Some(selected);
-                    }
-                    KeyCode::Char('q') | KeyCode::Esc => {
-                        break Some(4);
-                    }
-                    _ => {}
-                }
-            }
-        };
-
-        let _ = disable_raw_mode();
-
-        if let Some(idx) = choice {
-            match idx {
-                0 => {
-                    clear_screen();
-                    let _ = show_current_schedule();
-                    tell_user("Press Enter to continue...");
-                    let _ = get_input();
-                }
-                1 => add_schedule_menu(),
-                2 => remove_schedule_menu(),
-                4 => return,
-                _ => {}
-            }
+            Some(1) => add_schedule_menu(),
+            Some(2) => remove_schedule_menu(),
+            Some(3) | None => return,
+            _ => {}
         }
     }
 }
 
 fn add_schedule_menu() {
-    // Step 1: Choose frequency
-    let freq_items = vec![
-        "Daily (every day at 2:00 AM)",
-        "Weekly (every Sunday at 3:00 AM)",
-        "Weekdays (Monday-Friday at 2:00 AM)",
-        "Cancel",
-    ];
-
-    let mut selected = 0;
-
-    let frequency = loop {
-        clear_screen();
-        println!("\n{}\n", "=== ADD NEW SCHEDULE ===".blue().bold());
-        println!("Select frequency:\n");
-
-        for (i, item) in freq_items.iter().enumerate() {
-            if i == selected {
-                println!("{} {}", "*".green().bold(), item.green());
-            } else {
-                println!("  {}", item);
-            }
-        }
-
-        println!("\n{}", "Use ↑/↓ arrow keys to navigate, Enter to select".dimmed());
-
-        if enable_raw_mode().is_err() {
-            return;
-        }
-
-        let choice = loop {
-            if let Ok(Event::Key(KeyEvent { code, .. })) = event::read() {
-                match code {
-                    KeyCode::Up => {
-                        if selected > 0 {
-                            selected -= 1;
-                        } else {
-                            selected = freq_items.len() - 1;
-                        }
-                        break None;
-                    }
-                    KeyCode::Down => {
-                        if selected < freq_items.len() - 1 {
-                            selected += 1;
-                        } else {
-                            selected = 0;
-                        }
-                        break None;
-                    }
-                    KeyCode::Enter => break Some(selected),
-                    KeyCode::Esc => break Some(freq_items.len() - 1),
-                    _ => {}
-                }
-            }
-        };
-
-        let _ = disable_raw_mode();
-
-        if let Some(idx) = choice {
-            match idx {
-                0 => break "daily",
-                1 => break "weekly",
-                2 => break "weekdays",
-                _ => return,
-            }
-        }
+    let frequency = match run_menu(
+        "Add Schedule",
+        "Step 1 of 2: choose when automated maintenance should run.",
+        &[
+            ("Daily", "Every day at 2:00 AM."),
+            ("Weekly", "Every Sunday at 3:00 AM."),
+            ("Weekdays", "Monday through Friday at 2:00 AM."),
+            ("Cancel", "Return without creating a schedule."),
+        ],
+    ) {
+        Some(0) => "daily",
+        Some(1) => "weekly",
+        Some(2) => "weekdays",
+        _ => return,
     };
 
-    // Step 2: Choose update mode
-    let mode_items = vec![
-        "All updates (recommended for servers)",
-        "Critical/security updates only",
-        "Force update with reboot (use with caution!)",
-        "Cancel",
-    ];
-
-    let mut selected = 0;
-
-    let mode = loop {
-        clear_screen();
-        println!("\n{}\n", "=== ADD NEW SCHEDULE ===".blue().bold());
-        println!("Select update mode:\n");
-
-        for (i, item) in mode_items.iter().enumerate() {
-            if i == selected {
-                println!("{} {}", "*".green().bold(), item.green());
-            } else {
-                println!("  {}", item);
-            }
-        }
-
-        println!("\n{}", "Use ↑/↓ arrow keys to navigate, Enter to select".dimmed());
-
-        if enable_raw_mode().is_err() {
-            return;
-        }
-
-        let choice = loop {
-            if let Ok(Event::Key(KeyEvent { code, .. })) = event::read() {
-                match code {
-                    KeyCode::Up => {
-                        if selected > 0 {
-                            selected -= 1;
-                        } else {
-                            selected = mode_items.len() - 1;
-                        }
-                        break None;
-                    }
-                    KeyCode::Down => {
-                        if selected < mode_items.len() - 1 {
-                            selected += 1;
-                        } else {
-                            selected = 0;
-                        }
-                        break None;
-                    }
-                    KeyCode::Enter => break Some(selected),
-                    KeyCode::Esc => break Some(mode_items.len() - 1),
-                    _ => {}
-                }
-            }
-        };
-
-        let _ = disable_raw_mode();
-
-        if let Some(idx) = choice {
-            match idx {
-                0 => break "all",
-                1 => break "critical",
-                2 => break "force",
-                _ => return,
-            }
-        }
+    let mode = match run_menu(
+        "Add Schedule",
+        "Step 2 of 2: choose what kind of maintenance this job should perform.",
+        &[
+            (
+                "All Updates",
+                "Recommended. Installs all package updates and does not reboot automatically.",
+            ),
+            ("Critical Updates", "Security-focused upgrades only."),
+            (
+                "Force Update",
+                "Full update followed by an automatic reboot. Use only when planned.",
+            ),
+            ("Cancel", "Return without creating a schedule."),
+        ],
+    ) {
+        Some(0) => "all",
+        Some(1) => "critical",
+        Some(2) => "force",
+        _ => return,
     };
 
     // Confirm
-    clear_screen();
-    println!("\n{}\n", "=== CONFIRM SCHEDULE ===".blue().bold());
+    show_banner(
+        "Confirm Schedule",
+        "Review the automation rule before it is written to cron.",
+    );
     println!("You are about to schedule:");
     println!("  Frequency: {}", frequency);
     println!("  Mode: {} updates", mode);
@@ -870,7 +553,9 @@ fn add_schedule_menu() {
     if mode == "force" {
         println!();
         warning_message("WARNING: Force mode will automatically reboot your server!");
-        println!("This should only be used if you have redundancy or scheduled maintenance windows.");
+        println!(
+            "This should only be used if you have redundancy or scheduled maintenance windows."
+        );
     }
 
     tell_user("");
@@ -883,15 +568,12 @@ fn add_schedule_menu() {
                 success_message("Schedule added successfully!");
                 tell_user("Automated updates will run in the background.");
                 tell_user("Logs will be written to: /var/log/automated_updates.log");
-                tell_user("");
-                tell_user("Press Enter to continue...");
-                let _ = get_input();
+                wait_for_enter("Press Enter to continue...");
             }
             Err(_) => {
                 tell_user("");
                 error_message("Failed to add schedule. Check logs for details.");
-                tell_user("Press Enter to continue...");
-                let _ = get_input();
+                wait_for_enter("Press Enter to continue...");
             }
         }
     } else {
@@ -910,13 +592,11 @@ fn remove_schedule_menu() {
             if confirm("") {
                 match remove_all_schedules() {
                     Ok(_) => {
-                        tell_user("Press Enter to continue...");
-                        let _ = get_input();
+                        wait_for_enter("Press Enter to continue...");
                     }
                     Err(_) => {
                         error_message("Failed to remove schedules. Check logs for details.");
-                        tell_user("Press Enter to continue...");
-                        let _ = get_input();
+                        wait_for_enter("Press Enter to continue...");
                     }
                 }
             } else {
@@ -934,6 +614,4 @@ fn remove_schedule_menu() {
             thread::sleep(Duration::from_secs(2));
         }
     }
-
-    manage_schedule();
 }

@@ -2,7 +2,7 @@
 // Handles cron job creation, viewing, and removal
 
 use crate::logger::log_message;
-use crate::utils::{error_message, success_message, tell_user};
+use crate::utils::{error_message, section_heading, success_message, tell_user};
 use colored::*;
 use std::fs;
 use std::io::Write;
@@ -29,52 +29,52 @@ pub fn has_existing_schedule() -> anyhow::Result<bool> {
 
 /// Display current ubuntu-maintenance cron schedules
 pub fn show_current_schedule() -> anyhow::Result<()> {
-    println!("\n{}\n", "=== CURRENT UPDATE SCHEDULES ===".blue().bold());
-
     let output = Command::new("sh")
         .arg("-c")
         .arg("crontab -l 2>/dev/null | grep ubuntu-maintenance")
         .output()?;
 
     if !output.status.success() || output.stdout.is_empty() {
+        section_heading("Scheduled updates");
         tell_user("No scheduled updates found.");
         return Ok(());
     }
 
     let lines = String::from_utf8_lossy(&output.stdout);
-    let mut count = 0;
+    let mut schedules = Vec::new();
 
     for line in lines.lines() {
         if line.starts_with('#') {
             continue;
         }
+        schedules.push(line.to_string());
+    }
 
-        count += 1;
-        println!("Schedule {}: {}", count, line);
+    section_heading("Scheduled updates");
+    println!(
+        "{}",
+        "These jobs run automatically through your user crontab.".dimmed()
+    );
+    println!();
 
-        // Interpret the schedule
-        if line.contains("0 2 * * *") {
-            println!("  → Runs daily at 2:00 AM");
-        } else if line.contains("0 3 * * 0") {
-            println!("  → Runs weekly on Sunday at 3:00 AM");
-        } else if line.contains("0 2 * * 1-5") {
-            println!("  → Runs weekdays at 2:00 AM");
-        }
-
-        // Interpret the mode
-        if line.contains("-a") || line.contains("--all") {
-            println!("  → Mode: All updates (no reboot)");
-        } else if line.contains("-c") || line.contains("--critical") {
-            println!("  → Mode: Critical/security updates only");
-        } else if line.contains("-f") || line.contains("--force") {
-            println!("  → Mode: Force update with reboot");
-        }
-
+    for (index, line) in schedules.iter().enumerate() {
+        println!(
+            "{} {}",
+            format!("Schedule {}", index + 1).green().bold(),
+            format!("({})", schedule_summary(line)).dimmed()
+        );
+        println!("  Runs: {}", schedule_frequency(line));
+        println!("  Mode: {}", schedule_mode(line));
+        println!("  Raw : {}", line.dimmed());
         println!();
     }
 
-    if count > 0 {
-        println!("Total schedules: {}\n", count);
+    if !schedules.is_empty() {
+        println!("Total schedules: {}", schedules.len());
+        println!(
+            "{}",
+            "Tip: remove and recreate schedules here if you want a cleaner setup.".dimmed()
+        );
     }
 
     Ok(())
@@ -150,9 +150,48 @@ pub fn add_schedule(frequency: &str, mode: &str) -> anyhow::Result<()> {
     }
 
     success_message("SUCCESS: Schedule added successfully!");
-    log_message(&format!("Added cron schedule: {} updates {}", mode, frequency));
+    log_message(&format!(
+        "Added cron schedule: {} updates {}",
+        mode, frequency
+    ));
 
     Ok(())
+}
+
+fn schedule_frequency(line: &str) -> &'static str {
+    if line.contains("0 2 * * *") {
+        "Daily at 2:00 AM"
+    } else if line.contains("0 3 * * 0") {
+        "Weekly on Sunday at 3:00 AM"
+    } else if line.contains("0 2 * * 1-5") {
+        "Weekdays at 2:00 AM"
+    } else {
+        "Custom cron timing"
+    }
+}
+
+fn schedule_mode(line: &str) -> &'static str {
+    if line.contains("-a") || line.contains("--all") {
+        "All updates, no reboot"
+    } else if line.contains("-c") || line.contains("--critical") {
+        "Critical and security updates only"
+    } else if line.contains("-f") || line.contains("--force") {
+        "Full update with automatic reboot"
+    } else {
+        "Unknown"
+    }
+}
+
+fn schedule_summary(line: &str) -> &'static str {
+    match (schedule_frequency(line), schedule_mode(line)) {
+        ("Daily at 2:00 AM", "All updates, no reboot") => "daily maintenance",
+        ("Weekly on Sunday at 3:00 AM", "All updates, no reboot") => "weekly maintenance",
+        ("Weekdays at 2:00 AM", "Critical and security updates only") => {
+            "weekday security patching"
+        }
+        (_, "Full update with automatic reboot") => "automatic reboot enabled",
+        _ => "custom schedule",
+    }
 }
 
 /// Remove all ubuntu-maintenance schedules
@@ -227,9 +266,7 @@ pub fn remove_all_schedules() -> anyhow::Result<i32> {
 /// Find the ubuntu-maintenance binary path
 fn find_binary_path() -> anyhow::Result<String> {
     // Try `which` first
-    let output = Command::new("which")
-        .arg("ubuntu-maintenance")
-        .output()?;
+    let output = Command::new("which").arg("ubuntu-maintenance").output()?;
 
     if output.status.success() && !output.stdout.is_empty() {
         let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
@@ -237,7 +274,10 @@ fn find_binary_path() -> anyhow::Result<String> {
     }
 
     // Try common locations
-    for path in &["/usr/bin/ubuntu-maintenance", "/usr/local/bin/ubuntu-maintenance"] {
+    for path in &[
+        "/usr/bin/ubuntu-maintenance",
+        "/usr/local/bin/ubuntu-maintenance",
+    ] {
         if std::path::Path::new(path).exists() {
             return Ok(path.to_string());
         }

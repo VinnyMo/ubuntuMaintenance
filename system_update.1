@@ -1,4 +1,4 @@
-.TH SYSTEM_UPDATE 1 "October 2025" "version 2.1.0" "Ubuntu Server Maintenance Tool"
+.TH SYSTEM_UPDATE 1 "April 2026" "version 3.1.10" "Ubuntu Server Maintenance Tool"
 .SH NAME
 system_update \- automated Ubuntu/Debian server maintenance and update utility
 .SH SYNOPSIS
@@ -8,7 +8,7 @@ system_update \- automated Ubuntu/Debian server maintenance and update utility
 .B system_update
 is a production-ready command-line utility for automated Ubuntu/Debian server maintenance. It provides safe, logged, and auditable system updates with multiple operation modes suitable for web servers, database servers, and production environments.
 .PP
-The tool offers three main update strategies: force update (with automatic reboot), all updates (without reboot), and critical security updates only. All operations are logged to /var/log/system_update.log for audit trails.
+The tool offers three main update strategies: force update (with automatic reboot), all updates (without reboot), and critical security updates only. All operations are logged to /var/log/ubuntu_maintenance.log for audit trails.
 .SH OPTIONS
 .TP
 .BR \-f ", " \-\-force
@@ -31,20 +31,21 @@ Display help message with usage information and examples.
 .SH INTERACTIVE MODE
 When run without arguments,
 .B system_update
-presents an interactive menu with the following options:
+presents a full-screen interactive menu with the following options:
 .PP
 .nf
-1) Force Update (with reboot)
-2) All Update (no reboot)
-3) Critical Update (security only)
-4) System Information
-5) Help
-6) Manage Update Schedule
-0) Exit
+Run Updates
+Manage Schedule
+System Information
+View Logs
+Help
+Exit
 .fi
 .PP
-.B Manage Update Schedule
-(option 6) provides an interactive interface to create, view, and remove automated update schedules using cron. Users can set up daily, weekly, or weekday schedules with their choice of update mode (all, critical, or force). This eliminates the need to manually edit crontab files.
+Navigation uses the arrow keys and Enter. Escape or q returns to the previous screen.
+.PP
+.B Manage Schedule
+provides an interactive interface to create, view, and remove automated update schedules using cron. Users can set up daily, weekly, or weekday schedules with their choice of update mode (all, critical, or force). This eliminates the need to manually edit crontab files.
 .SH EXIT STATUS
 .TP
 .B 0
@@ -54,10 +55,13 @@ Success
 Failure (insufficient privileges, invalid arguments, or system errors)
 .SH FILES
 .TP
-.I /var/log/system_update.log
-Primary log file for all operations (falls back to /tmp/system_update.log if primary is unavailable)
+.I /var/log/ubuntu_maintenance.log
+Primary log file for all operations (falls back to /tmp/ubuntu_maintenance.log if primary is unavailable)
 .TP
-.I /usr/bin/system_update
+.I /var/log/ubuntu_maintenance_verbose.log
+Verbose command output log used by the in-app log viewer (falls back to /tmp/ubuntu_maintenance_verbose.log if needed)
+.TP
+.I /usr/bin/ubuntu-maintenance
 Installed binary location
 .SH EXAMPLES
 .TP
@@ -84,24 +88,24 @@ For automated weekly updates without reboot:
 .nf
 sudo crontab -e
 # Add:
-0 3 * * 0 /usr/bin/system_update -a >> /var/log/automated_updates.log 2>&1
+0 3 * * 0 /usr/bin/ubuntu-maintenance -a >> /var/log/automated_updates.log 2>&1
 .fi
 .PP
 For daily security updates only:
 .PP
 .nf
-0 2 * * * /usr/bin/system_update -c >> /var/log/security_updates.log 2>&1
+0 2 * * * /usr/bin/ubuntu-maintenance -c >> /var/log/security_updates.log 2>&1
 .fi
 .SH SECURITY
-Version 2.0 includes comprehensive security hardening:
+Version 3.1.10 includes the current Rust-based interface and logging model:
 .IP \[bu] 2
-All memory leaks fixed
+Compile-time memory safety
 .IP \[bu]
-Buffer overflow protection
+Structured logging
 .IP \[bu]
-Input validation on all user input
+Interactive schedule management
 .IP \[bu]
-Comprehensive error handling
+Paginated log browsing
 .IP \[bu]
 Sudo privilege checking
 .IP \[bu]

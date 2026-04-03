@@ -3,7 +3,7 @@
 A production-ready command-line utility for automated Ubuntu/Debian server maintenance. Designed for safe, logged, and auditable system updates with multiple operation modes.
 
 **Author:** Vincent T. Mossman
-**Version:** 3.1.7 (Rust Edition)
+**Version:** 3.1.10 (Rust Edition)
 **License:** MIT
 **Platform:** Ubuntu 24.04 (Noble) only
 
@@ -106,27 +106,24 @@ cargo clippy         # Run linter
 
 ### Interactive Mode
 
-Run without arguments for an interactive menu:
+Run without arguments for a guided full-screen menu:
 
 ```bash
 sudo ubuntu-maintenance
 ```
 
-You'll see:
+The interactive flow is organized around five areas:
 ```
-=== UBUNTU MAINTENANCE TOOL ===
-Log file: /var/log/ubuntu_maintenance.log
-
-1) Force Update (with reboot)
-2) All Update (no reboot)
-3) Critical Update (security only)
-4) System Information
-5) Schedule Management
-6) Help
-0) Exit
-
-Enter choice (0-6):
+Main Menu
+- Run Updates
+- Manage Schedule
+- System Information
+- View Logs
+- Help
+- Exit
 ```
+
+Navigation uses the arrow keys and `Enter`. `Esc` or `q` returns to the previous menu.
 
 ### Command-Line Mode
 
@@ -166,8 +163,8 @@ sudo ubuntu-maintenance --dry-run -f
 
 **System Monitoring:**
 ```bash
-# View system status (requires sudo)
-sudo ubuntu-maintenance --info
+# View system status
+ubuntu-maintenance --info
 ```
 
 ## Update Modes Explained
@@ -303,11 +300,19 @@ sudo systemctl start ubuntu-maintenance.timer
 
 ### Logging
 
-All operations are logged to `/var/log/ubuntu_maintenance.log` with timestamps.
+The tool writes two logs:
+
+- `/var/log/ubuntu_maintenance.log` for high-level actions and command status
+- `/var/log/ubuntu_maintenance_verbose.log` for captured command output used by the built-in log browser
 
 **View recent activity:**
 ```bash
 sudo tail -f /var/log/ubuntu_maintenance.log
+```
+
+**View detailed command output:**
+```bash
+sudo tail -f /var/log/ubuntu_maintenance_verbose.log
 ```
 
 **Log format:**
@@ -510,6 +515,14 @@ File issues on GitHub with:
 - Expected vs. actual behavior
 
 ## Changelog
+
+### Version 3.1.10 (2026-04-03) - QOL Refresh
+- Reworked the interactive navigation so menus share one consistent full-screen style
+- Reformatted system information into a faster, easier-to-scan summary with short-lived caching
+- Improved schedule viewing so cron jobs are explained in plain language
+- Cleaned up the verbose log browser for more readable paging and controls
+- Updated bundled help text, man pages, and packaging metadata to match the current app
+- Release follow-up: finish the next PPA packaging and publish workflow after interactive validation
 
 ### Version 3.1.7 (2025-10-31) - Rust Edition
 - Fix postinst/postrm scripts for proper log file handling

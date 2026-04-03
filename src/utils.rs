@@ -1,14 +1,38 @@
 // Utility functions module for ubuntu-maintenance
 // Console output, system commands, and date/time formatting
 
-use chrono::{Datelike, Local};
+use chrono::{DateTime, Datelike, Local};
 use colored::*;
 use std::io::{self, Write};
 use std::process::{Command, Stdio};
+use std::sync::{Mutex, OnceLock};
 use std::thread;
 use std::time::Duration;
 
-use crate::logger::{log_command, log_verbose, read_verbose_log, get_verbose_log_path};
+use crate::logger::{get_verbose_log_path, log_command, log_verbose, read_verbose_log};
+
+const INFO_CACHE_TTL_SECONDS: i64 = 20;
+
+struct CachedSystemInfo {
+    fetched_at: DateTime<Local>,
+    snapshot: SystemInfoSnapshot,
+}
+
+#[derive(Clone, Default)]
+pub struct SystemInfoSnapshot {
+    pub fetched_at: String,
+    pub hostname: String,
+    pub kernel: String,
+    pub os: String,
+    pub uptime: String,
+    pub last_reboot: String,
+    pub updates_count: i32,
+    pub security_count: i32,
+    pub disk: String,
+    pub memory: String,
+}
+
+static SYSTEM_INFO_CACHE: OnceLock<Mutex<Option<CachedSystemInfo>>> = OnceLock::new();
 
 /// Clear the terminal screen
 pub fn clear_screen() {
@@ -38,6 +62,104 @@ pub fn tell_user_custom(message: &str, leading_nl: usize, trailing_nl: usize) {
 pub fn tell_user_no_format(message: &str) {
     print!("{}", message);
     io::stdout().flush().unwrap();
+}
+
+pub fn section_heading(title: &str) {
+    println!("{}", title.blue().bold());
+}
+
+pub fn show_banner(title: &str, subtitle: &str) {
+    clear_screen();
+    println!();
+    println!("{}", "Ubuntu Maintenance".blue().bold());
+    println!("{}", title.white().bold());
+    if !subtitle.is_empty() {
+        println!("{}", subtitle.dimmed());
+    }
+    println!("{}", "─".repeat(72).dimmed());
+    println!();
+}
+
+pub fn wait_for_enter(prompt: &str) {
+    println!();
+    println!("{}", prompt.dimmed());
+    let _ = get_input();
+}
+
+pub fn run_menu(title: &str, subtitle: &str, items: &[(&str, &str)]) -> Option<usize> {
+    use crossterm::{
+        event::{self, Event, KeyCode, KeyEvent},
+        terminal::{disable_raw_mode, enable_raw_mode},
+    };
+
+    if items.is_empty() {
+        return None;
+    }
+
+    let mut selected = 0;
+
+    loop {
+        show_banner(title, subtitle);
+
+        for (index, (label, detail)) in items.iter().enumerate() {
+            let marker = if index == selected { "›" } else { " " };
+            let title_line = format!("{} {}", marker, label);
+            if index == selected {
+                println!("{}", title_line.green().bold());
+                if !detail.is_empty() {
+                    println!("    {}", detail.green());
+                }
+            } else {
+                println!("{}", title_line);
+                if !detail.is_empty() {
+                    println!("    {}", detail.dimmed());
+                }
+            }
+            println!();
+        }
+
+        println!(
+            "{}",
+            "Use ↑/↓ to move, Enter to choose, Esc or q to go back".dimmed()
+        );
+
+        if enable_raw_mode().is_err() {
+            error_message("Failed to enable terminal raw mode");
+            return None;
+        }
+
+        let result = loop {
+            if let Ok(Event::Key(KeyEvent { code, .. })) = event::read() {
+                match code {
+                    KeyCode::Up => {
+                        if selected == 0 {
+                            selected = items.len() - 1;
+                        } else {
+                            selected -= 1;
+                        }
+                        break None;
+                    }
+                    KeyCode::Down => {
+                        if selected + 1 < items.len() {
+                            selected += 1;
+                        } else {
+                            selected = 0;
+                        }
+                        break None;
+                    }
+                    KeyCode::Enter => break Some(selected),
+                    KeyCode::Esc | KeyCode::Char('q') => break Some(items.len() - 1),
+                    _ => {}
+                }
+            }
+        };
+
+        let _ = disable_raw_mode();
+
+        if let Some(choice) = result {
+            return Some(choice);
+        }
+    }
 }
 
 /// Execute a system command and display output
@@ -142,13 +264,13 @@ pub fn tell_system_with_progress(command: &str, message: &str) -> anyhow::Result
 /// Press 'v' during execution to toggle between progress indicator and live output
 pub fn tell_system_with_verbose(command: &str, message: &str) -> anyhow::Result<bool> {
     use crossterm::{
-        event::{self, Event, KeyCode, poll},
+        event::{self, poll, Event, KeyCode},
         terminal::{disable_raw_mode, enable_raw_mode},
     };
-    use std::process::Stdio;
     use std::io::{BufRead, BufReader};
-    use std::sync::{Arc, Mutex};
+    use std::process::Stdio;
     use std::sync::mpsc::{self, TryRecvError};
+    use std::sync::{Arc, Mutex};
 
     log_command(command, true);
 
@@ -315,7 +437,12 @@ pub fn tell_system_with_verbose(command: &str, message: &str) -> anyhow::Result<
                             // Clear line and show new mode
                             print!("\r{}\r", " ".repeat(80));
                             if verbose_mode {
-                                println!("{} {} {}", message, "[VERBOSE]".yellow().bold(), "press 'v' to hide".dimmed());
+                                println!(
+                                    "{} {} {}",
+                                    message,
+                                    "[VERBOSE]".yellow().bold(),
+                                    "press 'v' to hide".dimmed()
+                                );
                             }
                         }
                     }
@@ -422,11 +549,90 @@ pub fn confirm(prompt: &str) -> bool {
     }
 }
 
+pub fn get_system_info_snapshot() -> SystemInfoSnapshot {
+    let cache = SYSTEM_INFO_CACHE.get_or_init(|| Mutex::new(None));
+
+    if let Ok(guard) = cache.lock() {
+        if let Some(cached) = &*guard {
+            if Local::now()
+                .signed_duration_since(cached.fetched_at)
+                .num_seconds()
+                < INFO_CACHE_TTL_SECONDS
+            {
+                return cached.snapshot.clone();
+            }
+        }
+    }
+
+    let snapshot = SystemInfoSnapshot {
+        fetched_at: Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+        hostname: run_command_capture("uname -n", "Unavailable"),
+        kernel: run_command_capture("uname -r", "Unavailable"),
+        os: run_command_capture("lsb_release -d 2>/dev/null | cut -f2", "Ubuntu"),
+        uptime: run_command_capture("uptime -p", "Unavailable"),
+        last_reboot: run_command_capture("who -b | awk '{print $3, $4}'", "Unavailable"),
+        updates_count: run_command_capture(
+            "apt list --upgradable 2>/dev/null | grep -v 'Listing...' | wc -l",
+            "0",
+        )
+        .parse::<i32>()
+        .unwrap_or(0),
+        security_count: run_command_capture(
+            "apt list --upgradable 2>/dev/null | grep -i security | wc -l",
+            "0",
+        )
+        .parse::<i32>()
+        .unwrap_or(0),
+        disk: run_command_capture(
+            "df -H / | tail -1 | awk '{print $5 \" used | \" $4 \" free | \" $2 \" total\"}'",
+            "Unavailable",
+        ),
+        memory: run_command_capture(
+            "free -h --si | awk 'NR==2 {print $3 \" used | \" $7 \" available | \" $2 \" total\"}'",
+            "Unavailable",
+        ),
+    };
+
+    if let Ok(mut guard) = cache.lock() {
+        *guard = Some(CachedSystemInfo {
+            fetched_at: Local::now(),
+            snapshot: snapshot.clone(),
+        });
+    }
+
+    snapshot
+}
+
+pub fn invalidate_system_info_cache() {
+    if let Some(cache) = SYSTEM_INFO_CACHE.get() {
+        if let Ok(mut guard) = cache.lock() {
+            *guard = None;
+        }
+    }
+}
+
+fn run_command_capture(command: &str, fallback: &str) -> String {
+    Command::new("sh")
+        .arg("-c")
+        .arg(command)
+        .output()
+        .ok()
+        .and_then(|output| {
+            if output.status.success() {
+                Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
+            } else {
+                None
+            }
+        })
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| fallback.to_string())
+}
+
 /// Display countdown timer with cancel option
 /// Returns true if countdown completed, false if cancelled
 pub fn countdown_with_cancel(seconds: u32, message: &str) -> bool {
     use crossterm::{
-        event::{self, Event, KeyCode, poll},
+        event::{self, poll, Event, KeyCode},
         terminal::{disable_raw_mode, enable_raw_mode},
     };
     use std::process::{Command as ProcessCommand, Stdio};
@@ -486,8 +692,10 @@ pub fn view_verbose_logs() {
         terminal::{disable_raw_mode, enable_raw_mode},
     };
 
-    clear_screen();
-    println!("\n{}\n", "=== VERBOSE LOG VIEWER ===".blue().bold());
+    show_banner(
+        "Logs",
+        "Browse the detailed command log captured during update runs.",
+    );
     println!("Log file: {}\n", get_verbose_log_path().yellow());
 
     match read_verbose_log(500) {
@@ -497,19 +705,24 @@ pub fn view_verbose_logs() {
                 println!("\nVerbose logs will be created when you run updates.");
                 println!("These logs contain the full command output for troubleshooting.");
             } else {
-                let page_size = 30;
+                let page_size = 18;
                 let mut offset = 0;
                 let total_lines = lines.len();
 
                 loop {
-                    clear_screen();
-                    println!("\n{}\n", "=== VERBOSE LOG VIEWER ===".blue().bold());
+                    show_banner(
+                        "Logs",
+                        "Browse the detailed command log captured during update runs.",
+                    );
                     println!("Log file: {}", get_verbose_log_path().yellow());
-                    println!("Showing lines {}-{} of {}\n",
+                    println!(
+                        "Showing lines {}-{} of {}",
                         offset + 1,
                         (offset + page_size).min(total_lines),
-                        total_lines);
-                    println!("{}", "=".repeat(80).dimmed());
+                        total_lines
+                    );
+                    println!("{}", "Newer entries are at the top.".dimmed());
+                    println!("{}", "─".repeat(72).dimmed());
 
                     // Display current page
                     let end = (offset + page_size).min(total_lines);
@@ -517,9 +730,13 @@ pub fn view_verbose_logs() {
                         println!("{}", line);
                     }
 
-                    println!("{}", "=".repeat(80).dimmed());
+                    println!("{}", "─".repeat(72).dimmed());
                     println!();
-                    println!("{}", "↑/↓ arrows: Scroll | PgUp/PgDn: Page | q: Quit".dimmed());
+                    println!(
+                        "{}",
+                        "↑/↓ scroll one line, PgUp/PgDn scroll a page, Home/End jump, q exits"
+                            .dimmed()
+                    );
 
                     // Enable raw mode for key detection
                     if enable_raw_mode().is_err() {
@@ -579,7 +796,5 @@ pub fn view_verbose_logs() {
         }
     }
 
-    println!();
-    println!("Press Enter to return to menu...");
-    let _ = get_input();
+    wait_for_enter("Press Enter to return to the menu...");
 }
